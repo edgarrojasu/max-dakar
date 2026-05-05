@@ -1,0 +1,5 @@
+# Ignorar archivos de diagramas de Draw.io
+*.drawio
+
+# Ignorar archivos de Microsoft Word
+*.docx
