@@ -3,7 +3,7 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), jugador(nullptr), escenario(nullptr), timer(nullptr)
 {
-    setFixedSize(600, 800);
+    setFixedSize(800, 600);
     setWindowTitle("Dakar Mad Max");
 
     stack = new QStackedWidget(this);
@@ -15,7 +15,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Vista del juego (se llena al seleccionar)
     view = new QGraphicsView();
-    view->setFixedSize(600, 800);
+    view->setFixedSize(800, 600);
     view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     view->setFrameStyle(0);
@@ -29,12 +29,12 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 void MainWindow::iniciarJuego(TipoVehiculo tipo) {
-    scene = new QGraphicsScene(0, 0, 600, 800, this);
+    scene = new QGraphicsScene(0, 0, 800, 600, this);
     view->setScene(scene);
 
     escenario = new Escenario(scene);
 
-    jugador = new Vehiculo(270, 680, tipo);
+    jugador = new Vehiculo(270, 600, tipo);
     scene->addItem(jugador);
 
     timer = new QTimer(this);

@@ -7,12 +7,12 @@
 SeleccionVehiculo::SeleccionVehiculo(QWidget *parent)
     : QWidget(parent)
 {
-    setFixedSize(600, 800);
+    setFixedSize(800, 600);
     setStyleSheet("background-color: #1a1a1a;");
 
     // Título
     QLabel *titulo = new QLabel("ELIGE TU VEHÍCULO", this);
-    titulo->setGeometry(0, 80, 600, 50);
+    titulo->setGeometry(0, 80, 600, 66.6);
     titulo->setAlignment(Qt::AlignCenter);
     QFont font = titulo->font();
     font.setPointSize(22);
