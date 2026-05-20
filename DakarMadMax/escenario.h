@@ -2,8 +2,7 @@
 #define ESCENARIO_H
 
 #include <QGraphicsScene>
-#include <QGraphicsRectItem>
-#include <vector>
+#include <QGraphicsPixmapItem>
 
 class Escenario {
 public:
@@ -13,9 +12,13 @@ public:
 private:
     QGraphicsScene *scene;
 
-    // Dos copias del fondo para el scroll infinito
-    QGraphicsRectItem *fondo1;
-    QGraphicsRectItem *fondo2;
+    QGraphicsPixmapItem *fondo1;
+    QGraphicsPixmapItem *fondo2;
+
+    QGraphicsPixmapItem *bordeIzq1;
+    QGraphicsPixmapItem *bordeIzq2;
+    QGraphicsPixmapItem *bordeDer1;
+    QGraphicsPixmapItem *bordeDer2;
 
     float velocidadFondo;
 };

@@ -11,5 +11,7 @@
         <file>imagenes/fondo1.png</file>
         <file>imagenes/fondoMenu.png</file>
         <file>imagenes/fonogem.png</file>
+        <file>imagenes/fondoderchat.png</file>
+        <file>imagenes/fondoIzq.png</file>
     </qresource>
 </RCC>

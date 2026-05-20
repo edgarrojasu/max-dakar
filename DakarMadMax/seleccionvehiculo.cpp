@@ -28,10 +28,9 @@ SeleccionVehiculo::SeleccionVehiculo(QWidget *parent)
 
     // Subtítulo
     QLabel *sub = new QLabel("Dakar Mad Max", this);
-    sub->setGeometry(100, 40, 600, 35);
+    sub->setGeometry(100, 40, 600, 45);
     sub->setAlignment(Qt::AlignCenter);
-    QFont font2("Grunge", 20);
-    sub->setFont(font2);
+    QFont font2 = sub->font();
     font2.setPointSize(30);
     sub->setFont(font2);
     sub->setStyleSheet("color: #cf2222;");

@@ -23,14 +23,8 @@ protected:
 private:
     TipoVehiculo tipo;
     float speed;
+    float limiteIzq, limiteDer, limiteArr, limiteAba;  // reemplaza las constantes
     std::set<int> teclasPulsadas;
-
-    static constexpr float ANCHO     = 40.0f;
-    static constexpr float ALTO      = 60.0f;
-    static constexpr float LIMITE_IZQ = -15.0f;
-    static constexpr float LIMITE_DER = 530.0f;
-    static constexpr float LIMITE_ARR = 70.0f;
-    static constexpr float LIMITE_ABA = 570.0f;
 };
 
 #endif

@@ -12,6 +12,28 @@ Vehiculo::Vehiculo(float x, float y, TipoVehiculo tipo)
     case TipoVehiculo::Camion:     speed = 3.0f; break;
     }
 
+    // Límites según tamaño del sprite de cada vehículo
+    switch (tipo) {
+    case TipoVehiculo::Moto:
+        limiteIzq = -10.0f;
+        limiteDer = 550.0f;  // más angosta, puede ir más a la derecha
+        limiteArr = 100.0f;
+        limiteAba = 590.0f;
+        break;
+    case TipoVehiculo::CarroDakar:
+        limiteIzq = -10.0f;
+        limiteDer = 510.0f;
+        limiteArr = 100.0f;
+        limiteAba = 550.0f;
+        break;
+    case TipoVehiculo::Camion:
+        limiteIzq = -10.0f;
+        limiteDer = 530.0f;  // más ancho, límite más a la izquierda
+        limiteArr = 100.0f;
+        limiteAba = 530.0f;
+        break;
+    }
+
     // Cargar sprite según tipo
     QString rutaSprite;
     switch (tipo)
@@ -63,10 +85,10 @@ void Vehiculo::actualizar()
     float nx = x() + vx;
     float ny = y() + vy;
 
-    if (nx < LIMITE_IZQ) nx = LIMITE_IZQ;
-    if (nx > LIMITE_DER) nx = LIMITE_DER;
-    if (ny < LIMITE_ARR) ny = LIMITE_ARR;
-    if (ny > LIMITE_ABA) ny = LIMITE_ABA;
+    if (nx < limiteIzq) nx = limiteIzq;
+    if (nx > limiteDer) nx = limiteDer;
+    if (ny < limiteArr) ny = limiteArr;
+    if (ny > limiteAba) ny = limiteAba;
 
     setPos(nx, ny);
 }
