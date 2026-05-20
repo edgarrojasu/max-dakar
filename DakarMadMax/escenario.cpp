@@ -2,7 +2,7 @@
 #include <QPixmap>
 
 Escenario::Escenario(QGraphicsScene *scene)
-    : scene(scene), velocidadFondo(10.0f)
+    : scene(scene), velocidadFondo(100.0f)
 {
     // ── FONDO DESPLAZABLE ─────────────────────────────────────────
     QPixmap pxFondo1(":/imagenes/fondo1.png");

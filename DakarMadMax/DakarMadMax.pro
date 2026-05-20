@@ -10,12 +10,14 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     escenario.cpp \
+    terreno.cpp \
     vehiculo.cpp \
     seleccionvehiculo.cpp
 
 HEADERS += \
     mainwindow.h \
     escenario.h \
+    terreno.h \
     vehiculo.h \
     seleccionvehiculo.h \
     tiposvehiculo.h

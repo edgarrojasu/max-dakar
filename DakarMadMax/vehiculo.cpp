@@ -7,9 +7,9 @@ Vehiculo::Vehiculo(float x, float y, TipoVehiculo tipo)
 {
     // Velocidad base según vehículo — se ajustará con terreno después
     switch (tipo) {
-    case TipoVehiculo::Moto:       speed = 5.0f; break;
-    case TipoVehiculo::CarroDakar: speed = 4.0f; break;
-    case TipoVehiculo::Camion:     speed = 3.0f; break;
+    case TipoVehiculo::Moto:       speed = 0.5f; break;
+    case TipoVehiculo::CarroDakar: speed = 0.5f; break;
+    case TipoVehiculo::Camion:     speed = 0.5f; break;
     }
 
     // Límites según tamaño del sprite de cada vehículo
@@ -73,14 +73,19 @@ Vehiculo::Vehiculo(float x, float y, TipoVehiculo tipo)
     setPos(x, y);
 }
 
-void Vehiculo::actualizar()
-{
+void Vehiculo::actualizar() {
     float vx = 0, vy = 0;
 
     if (teclasPulsadas.count(Qt::Key_A)) vx = -speed;
     if (teclasPulsadas.count(Qt::Key_D)) vx =  speed;
-    if (teclasPulsadas.count(Qt::Key_W)) vy = -speed;
+    // W eliminado
     if (teclasPulsadas.count(Qt::Key_S)) vy =  speed;
+
+    // Avance automático hacia arriba
+    vy -= speed;
+
+    vx *= multiplicador;
+    vy *= multiplicador;
 
     float nx = x() + vx;
     float ny = y() + vy;

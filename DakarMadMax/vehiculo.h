@@ -8,6 +8,9 @@
 
 class Vehiculo : public QGraphicsPixmapItem {
 public:
+    void setMultiplicador(float m) { multiplicador = m; }
+    float getMultiplicador() const { return multiplicador; }
+
     Vehiculo(float x, float y, TipoVehiculo tipo);
 
     void actualizar();
@@ -21,6 +24,7 @@ protected:
     void keyReleaseEvent(QKeyEvent *event) override;
 
 private:
+    float multiplicador = 1.0f;
     TipoVehiculo tipo;
     float speed;
     float limiteIzq, limiteDer, limiteArr, limiteAba;  // reemplaza las constantes
