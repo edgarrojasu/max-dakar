@@ -8,5 +8,8 @@
         <file>imagenes/camionCenital.png</file>
         <file>imagenes/carroCenital.png</file>
         <file>imagenes/motoCenital.png</file>
+        <file>imagenes/fondo1.png</file>
+        <file>imagenes/fondoMenu.png</file>
+        <file>imagenes/fonogem.png</file>
     </qresource>
 </RCC>

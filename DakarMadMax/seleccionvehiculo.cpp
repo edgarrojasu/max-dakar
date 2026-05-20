@@ -7,12 +7,18 @@
 SeleccionVehiculo::SeleccionVehiculo(QWidget *parent)
     : QWidget(parent)
 {
+    // Fondo del menú
+    QLabel *fondo = new QLabel(this);
+    fondo->setGeometry(0, 0, 800, 600);
+    QPixmap fondoPx(":/imagenes/fondoMenu.png");
+    fondo->setPixmap(fondoPx.scaled(800, 600, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
+    fondo->lower();  // manda el fondo atrás de todo
     setFixedSize(800, 600);
-    setStyleSheet("background-color: #1a1a1a;");
+    setStyleSheet("background-color: transparent;");
 
     // Título
     QLabel *titulo = new QLabel("ELIGE TU VEHÍCULO", this);
-    titulo->setGeometry(0, 80, 600, 66.6);
+    titulo->setGeometry(0, 80, 800, 66.6);
     titulo->setAlignment(Qt::AlignCenter);
     QFont font = titulo->font();
     font.setPointSize(22);
@@ -22,33 +28,34 @@ SeleccionVehiculo::SeleccionVehiculo(QWidget *parent)
 
     // Subtítulo
     QLabel *sub = new QLabel("Dakar Mad Max", this);
-    sub->setGeometry(0, 40, 600, 35);
+    sub->setGeometry(100, 40, 600, 35);
     sub->setAlignment(Qt::AlignCenter);
-    QFont font2 = sub->font();
-    font2.setPointSize(13);
+    QFont font2("Grunge", 20);
     sub->setFont(font2);
-    sub->setStyleSheet("color: #888888;");
+    font2.setPointSize(30);
+    sub->setFont(font2);
+    sub->setStyleSheet("color: #cf2222;");
 
     // Tres botones de selección
-    crearBoton(TipoVehiculo::Moto,      ":/imagenes/motoCenital.png",   "MOTO",        60,  200);
-    crearBoton(TipoVehiculo::CarroDakar,":/imagenes/carroCenital.png",  "CARRO DAKAR", 230, 200);
-    crearBoton(TipoVehiculo::Camion,    ":/imagenes/camionCenital.png", "CAMIÓN",      400, 200);
+    crearBoton(TipoVehiculo::Moto,      ":/imagenes/motoCenital.png",   "MOTO",        100,  200);
+    crearBoton(TipoVehiculo::CarroDakar,":/imagenes/carroCenital.png",  "CARRO DAKAR", 330, 200);
+    crearBoton(TipoVehiculo::Camion,    ":/imagenes/camionCenital.png", "CAMIÓN",      570, 200);
 
     // Descripción de cada vehículo
     QLabel *descMoto = new QLabel("Rápida en\ncarretera\nVulnerable\nen fango", this);
-    descMoto->setGeometry(40, 430, 120, 100);
+    descMoto->setGeometry(100, 430, 120, 100);
     descMoto->setAlignment(Qt::AlignCenter);
-    descMoto->setStyleSheet("color: #cccccc; font-size: 11px;");
+    descMoto->setStyleSheet("color: #cccccc; font-size: 11px; background-color: rgba(0,0,0,150);");
 
     QLabel *descDakar = new QLabel("Equilibrado\nen todos\nlos terrenos", this);
-    descDakar->setGeometry(210, 430, 120, 100);
+    descDakar->setGeometry(330, 430, 120, 100);
     descDakar->setAlignment(Qt::AlignCenter);
-    descDakar->setStyleSheet("color: #cccccc; font-size: 11px;");
+    descDakar->setStyleSheet("color: #cccccc; font-size: 11px; background-color: rgba(0,0,0,150);");
 
     QLabel *descCamion = new QLabel("Lento pero\nresistente\na impactos", this);
-    descCamion->setGeometry(380, 430, 120, 100);
+    descCamion->setGeometry(570, 430, 120, 100);
     descCamion->setAlignment(Qt::AlignCenter);
-    descCamion->setStyleSheet("color: #cccccc; font-size: 11px;");
+    descCamion->setStyleSheet("color: #cccccc; font-size: 11px; background-color: rgba(0,0,0,150);");
 }
 
 void SeleccionVehiculo::crearBoton(TipoVehiculo tipo, const QString &imagen,
@@ -61,7 +68,7 @@ void SeleccionVehiculo::crearBoton(TipoVehiculo tipo, const QString &imagen,
     imgLabel->setStyleSheet(
         "border: 2px solid #444444;"
         "border-radius: 8px;"
-        "background-color: #2a2a2a;"
+        "background-color: rgba(30, 30, 30, 180);"  // semitransparente
         );
 
     QPixmap px(imagen);

@@ -27,10 +27,10 @@ private:
 
     static constexpr float ANCHO     = 40.0f;
     static constexpr float ALTO      = 60.0f;
-    static constexpr float LIMITE_IZQ = 20.0f;
-    static constexpr float LIMITE_DER = 540.0f;
-    static constexpr float LIMITE_ARR = 100.0f;
-    static constexpr float LIMITE_ABA = 720.0f;
+    static constexpr float LIMITE_IZQ = -15.0f;
+    static constexpr float LIMITE_DER = 530.0f;
+    static constexpr float LIMITE_ARR = 70.0f;
+    static constexpr float LIMITE_ABA = 570.0f;
 };
 
 #endif
