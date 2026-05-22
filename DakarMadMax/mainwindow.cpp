@@ -53,41 +53,45 @@ void MainWindow::gameLoop() {
     escenario->desplazar();
     jugador->actualizar();
 
-    // Generar terreno cada ~90 frames (~1.5 segundos)
+    // Generar terreno cada ~90 frames
     contadorFrames++;
     if (contadorFrames >= 90) {
         contadorFrames = 0;
 
-        // Posición X aleatoria dentro de la pista (entre 20 y 480)
-        float x = QRandomGenerator::global()->bounded(20, 480);
-        float ancho = QRandomGenerator::global()->bounded(80, 200);
-        float alto  = QRandomGenerator::global()->bounded(40, 80);
+        float x     = QRandomGenerator::global()->bounded(20, 400);
+        float ancho = QRandomGenerator::global()->bounded(150, 350);
+        float alto  = QRandomGenerator::global()->bounded(60, 120);
 
-        Terreno *t = new Terreno(x, -alto, ancho, alto,
-                                 QColor(139, 90, 43),   // marrón llamativo
-                                 0.5f);                  // todos van al 50%
+        // 50% probabilidad de fango o carretera
+        TipoTerreno tipo = (QRandomGenerator::global()->bounded(2) == 0)
+                               ? TipoTerreno::Fango
+                               : TipoTerreno::Carretera;
+
+        Terreno *t = new Terreno(x, -alto, ancho, alto, tipo);
         scene->addItem(t);
         terrenos.push_back(t);
     }
 
-    // Mover terrenos y detectar colisiones
+    // Mover y detectar colisiones
+    bool sobreTerreno = false;
     for (int i = terrenos.size() - 1; i >= 0; i--) {
         terrenos[i]->desplazar(3.0f);
 
-        // Colisión con jugador
         if (terrenos[i]->collidesWithItem(jugador)) {
-            jugador->setMultiplicador(0.5f);
-        } else {
-            jugador->setMultiplicador(1.0f);
+            jugador->setMultiplicador(terrenos[i]->getMultiplicador());
+            sobreTerreno = true;
         }
 
-        // Eliminar si salió de pantalla
         if (terrenos[i]->fueraDePantalla()) {
             scene->removeItem(terrenos[i]);
             delete terrenos[i];
             terrenos.erase(terrenos.begin() + i);
         }
     }
+
+    // Si no está sobre ningún terreno, no avanza
+    if (!sobreTerreno)
+        jugador->setMultiplicador(0.0f);
 }
 
 MainWindow::~MainWindow() {}

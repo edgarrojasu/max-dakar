@@ -17,17 +17,17 @@ public:
     void keyPress(int key);
     void keyRelease(int key);
 
-    TipoVehiculo getTipo() const { return tipo; }
+    TipoVehiculo getTipo() const { return tipoVehiculo; }
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
     void keyReleaseEvent(QKeyEvent *event) override;
 
 private:
-    float multiplicador = 1.0f;
-    TipoVehiculo tipo;
+    TipoVehiculo tipoVehiculo;  // era: tipo
     float speed;
-    float limiteIzq, limiteDer, limiteArr, limiteAba;  // reemplaza las constantes
+    float multiplicador = 0.0f;
+    float limiteIzq, limiteDer, limiteArr, limiteAba;
     std::set<int> teclasPulsadas;
 };
 

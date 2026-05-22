@@ -3,17 +3,17 @@
 #include <QKeyEvent>
 
 Vehiculo::Vehiculo(float x, float y, TipoVehiculo tipo)
-    : tipo(tipo)
+    : tipoVehiculo(tipo)
 {
     // Velocidad base según vehículo — se ajustará con terreno después
-    switch (tipo) {
+    switch (tipoVehiculo) {
     case TipoVehiculo::Moto:       speed = 0.5f; break;
     case TipoVehiculo::CarroDakar: speed = 0.5f; break;
     case TipoVehiculo::Camion:     speed = 0.5f; break;
     }
 
     // Límites según tamaño del sprite de cada vehículo
-    switch (tipo) {
+    switch (tipoVehiculo) {
     case TipoVehiculo::Moto:
         limiteIzq = -10.0f;
         limiteDer = 550.0f;  // más angosta, puede ir más a la derecha
@@ -36,7 +36,7 @@ Vehiculo::Vehiculo(float x, float y, TipoVehiculo tipo)
 
     // Cargar sprite según tipo
     QString rutaSprite;
-    switch (tipo)
+    switch (tipoVehiculo)
     {
         case TipoVehiculo::Moto:       rutaSprite = ":/imagenes/motoCenital.png";   break;
         case TipoVehiculo::CarroDakar: rutaSprite = ":/imagenes/carroCenital.png";  break;
@@ -54,7 +54,7 @@ Vehiculo::Vehiculo(float x, float y, TipoVehiculo tipo)
     {
         // ── TAMAÑO por vehículo ──────────────────────────────
         int ancho, alto;
-        switch (tipo)
+        switch (tipoVehiculo)
         {
             case TipoVehiculo::Moto:       ancho = 70;  alto = 120; break;
             case TipoVehiculo::CarroDakar: ancho = 120;  alto = 160; break;
@@ -78,14 +78,13 @@ void Vehiculo::actualizar() {
 
     if (teclasPulsadas.count(Qt::Key_A)) vx = -speed;
     if (teclasPulsadas.count(Qt::Key_D)) vx =  speed;
-    // W eliminado
     if (teclasPulsadas.count(Qt::Key_S)) vy =  speed;
 
-    // Avance automático hacia arriba
-    vy -= speed;
+    // Solo avanza hacia arriba si está sobre algún terreno
+    // multiplicador = 0 significa sin terreno, no avanza
+    vy -= speed * multiplicador;
 
-    vx *= multiplicador;
-    vy *= multiplicador;
+    vx *= multiplicador > 0 ? 1.0f : 0.0f;  // sin terreno tampoco se mueve lateral
 
     float nx = x() + vx;
     float ny = y() + vy;
