@@ -7,6 +7,9 @@ QT += core gui widgets
 CONFIG += c++17
 
 SOURCES += \
+    carretera.cpp \
+    fango.cpp \
+    llanta.cpp \
     main.cpp \
     mainwindow.cpp \
     escenario.cpp \
@@ -15,6 +18,9 @@ SOURCES += \
     seleccionvehiculo.cpp
 
 HEADERS += \
+    carretera.h \
+    fango.h \
+    llanta.h \
     mainwindow.h \
     escenario.h \
     terreno.h \

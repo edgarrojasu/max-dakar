@@ -1,4 +1,6 @@
 #include "mainwindow.h"
+#include <qdebug>
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), jugador(nullptr), escenario(nullptr), timer(nullptr)
@@ -50,48 +52,106 @@ void MainWindow::iniciarJuego(TipoVehiculo tipo) {
 }
 
 void MainWindow::gameLoop() {
+    //qdebug() << "--- inicio gameLoop, terrenos:" << terrenos.size();
+
+    escenario->desplazar();
+    //qdebug() << "escenario ok";
+
+    jugador->actualizar();
+    //qdebug() << "jugador ok";
     escenario->desplazar();
     jugador->actualizar();
 
     // Generar terreno cada ~90 frames
     contadorFrames++;
     if (contadorFrames >= 90) {
+        //qdebug() << "generando terreno...";
+
         contadorFrames = 0;
 
-        float x     = QRandomGenerator::global()->bounded(20, 400);
-        float ancho = QRandomGenerator::global()->bounded(150, 350);
-        float alto  = QRandomGenerator::global()->bounded(60, 120);
+        int x     = QRandomGenerator::global()->bounded(20, 400);
+        int ancho = QRandomGenerator::global()->bounded(150, 350);
+        int alto  = QRandomGenerator::global()->bounded(60, 120);
 
-        // 50% probabilidad de fango o carretera
-        TipoTerreno tipo = (QRandomGenerator::global()->bounded(2) == 0)
-                               ? TipoTerreno::Fango
-                               : TipoTerreno::Carretera;
+        float fx = (float)x;
+        float fy = -(float)alto;
+        float fw = (float)ancho;
+        float fh = (float)alto;
 
-        Terreno *t = new Terreno(x, -alto, ancho, alto, tipo);
+        Terreno *t;
+        if (QRandomGenerator::global()->bounded(2) == 0)
+            t = new Fango(fx, fy, fw, fh);
+        else
+            t = new Carretera(fx, fy, fw, fh);
+
         scene->addItem(t);
         terrenos.push_back(t);
+        //qdebug() << "terreno generado ok";
+
     }
 
-    // Mover y detectar colisiones
-    bool sobreTerreno = false;
-    for (int i = terrenos.size() - 1; i >= 0; i--) {
-        terrenos[i]->desplazar(3.0f);
+    // Generar llanta cada ~150 frames
+    contadorLlantas++;
+    if (contadorLlantas >= 150) {
+        contadorLlantas = 0;
+        float x   = (float)QRandomGenerator::global()->bounded(50, 500);
+        float vel = 2.0f + QRandomGenerator::global()->bounded(0, 20) * 0.1f;
+        Terreno *l = new Llanta(x, vel);
+        scene->addItem(l);
+        terrenos.push_back(l);
+    }
 
-        if (terrenos[i]->collidesWithItem(jugador)) {
+    // Primero mover todos
+    //qdebug() << "moviendo terrenos...";
+    for (int i = 0; i < (int)terrenos.size(); i++) {
+        //qdebug() << "  moviendo" << i << "tipo:" << typeid(*terrenos[i]).name();
+        terrenos[i]->actualizar(3.0f);
+        //qdebug() << "  ok" << i;
+    }
+    //qdebug() << "movimiento ok";
+
+
+    // Detectar colisiones por separado
+    ////qdebug() << "colisiones...";
+
+    bool sobreTerreno = false;
+    bool sobreFango   = false;
+
+    for (int i = 0; i < (int)terrenos.size(); i++) {
+        if (!terrenos[i]->scene()) continue;  // ya fue removido
+
+        QRectF rJugador = jugador->mapToScene(jugador->boundingRect()).boundingRect();
+        QRectF rTerreno = terrenos[i]->mapToScene(terrenos[i]->boundingRect()).boundingRect();
+
+        if (rJugador.intersects(rTerreno)) {
             jugador->setMultiplicador(terrenos[i]->getMultiplicador());
             sobreTerreno = true;
+            if (dynamic_cast<Fango*>(terrenos[i]))
+                sobreFango = true;
         }
+    }
 
+    jugador->setEnFango(sobreFango);
+    if (!sobreTerreno)
+        jugador->setMultiplicador(0.0f);
+    //qdebug() << "colisiones ok";
+
+
+    // Eliminar los que salieron de pantalla — loop separado al final
+    //qdebug() << "eliminando...";
+
+    std::vector<Terreno*> sobrevivientes;
+    for (int i = 0; i < (int)terrenos.size(); i++) {
         if (terrenos[i]->fueraDePantalla()) {
             scene->removeItem(terrenos[i]);
             delete terrenos[i];
-            terrenos.erase(terrenos.begin() + i);
+        } else {
+            sobrevivientes.push_back(terrenos[i]);
         }
     }
+    terrenos = sobrevivientes;
+    //qdebug() << "eliminacion ok";
 
-    // Si no está sobre ningún terreno, no avanza
-    if (!sobreTerreno)
-        jugador->setMultiplicador(0.0f);
 }
 
 MainWindow::~MainWindow() {}

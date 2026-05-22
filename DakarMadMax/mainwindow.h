@@ -10,9 +10,12 @@
 #include "escenario.h"
 #include "seleccionvehiculo.h"
 #include "tiposvehiculo.h"
-#include "terreno.h"
 #include <vector>
 #include <QRandomGenerator>
+#include "terreno.h"
+#include "carretera.h"
+#include "fango.h"
+#include "llanta.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -36,6 +39,7 @@ private:
     Escenario      *escenario;
     std::vector<Terreno*> terrenos;
     int contadorFrames = 0;
+    int contadorLlantas = 0;
 
 };
 

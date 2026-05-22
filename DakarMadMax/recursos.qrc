@@ -2,7 +2,6 @@
     <qresource prefix="/">
         <file>imagenes/camion2.5.png</file>
         <file>imagenes/carro2.5.png</file>
-        <file>imagenes/fango.png</file>
         <file>imagenes/moto2.5.png</file>
         <file>imagenes/powerUpSuspencion.png</file>
         <file>imagenes/camionCenital.png</file>
@@ -13,5 +12,8 @@
         <file>imagenes/fonogem.png</file>
         <file>imagenes/fondoderchat.png</file>
         <file>imagenes/fondoIzq.png</file>
+        <file>imagenes/carretera.png</file>
+        <file>imagenes/llanta.png</file>
+        <file>imagenes/fango.png</file>
     </qresource>
 </RCC>

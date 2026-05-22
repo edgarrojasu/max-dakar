@@ -1,27 +1,18 @@
 #ifndef TERRENO_H
 #define TERRENO_H
 
-#include <QGraphicsRectItem>
-#include <QBrush>
-#include <QPen>
+#include <QGraphicsPixmapItem>
 
-enum class TipoTerreno {
-    Fango,
-    Carretera
-};
-
-class Terreno : public QGraphicsRectItem {
+class Terreno : public QGraphicsPixmapItem {
 public:
-    Terreno(float x, float y, float ancho, float alto, TipoTerreno tipo);
+    explicit Terreno(float x, float y);
 
-    void desplazar(float velocidad);
-    bool fueraDePantalla() const;
-    float getMultiplicador() const { return multiplicador; }
-    TipoTerreno getTipo() const { return tipo; }
+    virtual void actualizar(float velocidadMundo) = 0;  // cada subclase se mueve distinto
+    virtual float getMultiplicador() const = 0;
+    virtual bool fueraDePantalla() const;
 
-private:
-    float multiplicador;
-    TipoTerreno tipo;
+protected:
+    float velocidadY;
 };
 
 #endif
