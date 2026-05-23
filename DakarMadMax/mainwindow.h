@@ -40,6 +40,7 @@ private:
     std::vector<Terreno*> terrenos;
     int contadorFrames = 0;
     int contadorLlantas = 0;
+    int contadorFango   = 0;  // para fango
 
 };
 

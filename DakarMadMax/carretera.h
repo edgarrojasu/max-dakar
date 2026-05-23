@@ -8,7 +8,7 @@ public:
     Carretera(float x, float y, float ancho, float alto);
 
     void actualizar(float velocidadMundo) override;
-    float getMultiplicador() const override { return 1.3f; }
+    float getMultiplicador() const override { return 0.1f; }
 };
 
 #endif

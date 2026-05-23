@@ -59,35 +59,29 @@ void MainWindow::gameLoop() {
 
     jugador->actualizar();
     //qdebug() << "jugador ok";
-    escenario->desplazar();
-    jugador->actualizar();
 
-    // Generar terreno cada ~90 frames
+    // Generar carretera cada ~200 frames
     contadorFrames++;
-    if (contadorFrames >= 90) {
-        //qdebug() << "generando terreno...";
-
+    if (contadorFrames >= 200) {
         contadorFrames = 0;
-
         int x     = QRandomGenerator::global()->bounded(20, 400);
-        int ancho = QRandomGenerator::global()->bounded(150, 350);
-        int alto  = QRandomGenerator::global()->bounded(60, 120);
-
-        float fx = (float)x;
-        float fy = -(float)alto;
-        float fw = (float)ancho;
-        float fh = (float)alto;
-
-        Terreno *t;
-        if (QRandomGenerator::global()->bounded(2) == 0)
-            t = new Fango(fx, fy, fw, fh);
-        else
-            t = new Carretera(fx, fy, fw, fh);
-
+        int ancho = QRandomGenerator::global()->bounded(100, 140);
+        int alto  = QRandomGenerator::global()->bounded(5000,7000);
+        Terreno *t = new Carretera((float)x, -(float)alto, (float)ancho, (float)alto);
         scene->addItem(t);
         terrenos.push_back(t);
-        //qdebug() << "terreno generado ok";
+    }
 
+    // Generar fango cada ~100 frames
+    contadorFango++;
+    if (contadorFango >= 200) {
+        contadorFango = 0;
+        int x     = QRandomGenerator::global()->bounded(20, 400);
+        int ancho = QRandomGenerator::global()->bounded(200, 300);
+        int alto  = QRandomGenerator::global()->bounded(1000,1500);
+        Terreno *t = new Fango((float)x, -(float)alto, (float)ancho, (float)alto);
+        scene->addItem(t);
+        terrenos.push_back(t);
     }
 
     // Generar llanta cada ~150 frames
@@ -96,16 +90,26 @@ void MainWindow::gameLoop() {
         contadorLlantas = 0;
         float x   = (float)QRandomGenerator::global()->bounded(50, 500);
         float vel = 2.0f + QRandomGenerator::global()->bounded(0, 20) * 0.1f;
-        Terreno *l = new Llanta(x, vel);
-        scene->addItem(l);
-        terrenos.push_back(l);
+
+        Llanta *l = new Llanta(x, vel);
+
+        // Solo agregar si no está encima del jugador al generarse
+        QRectF rJugador = jugador->mapToScene(jugador->boundingRect()).boundingRect();
+        QRectF rLlanta  = QRectF(x, -60, 60, 60);
+
+        if (!rJugador.intersects(rLlanta)) {
+            scene->addItem(l);
+            terrenos.push_back(l);
+        } else {
+            delete l;  // descartarla y esperar el próximo ciclo
+        }
     }
 
     // Primero mover todos
     //qdebug() << "moviendo terrenos...";
     for (int i = 0; i < (int)terrenos.size(); i++) {
         //qdebug() << "  moviendo" << i << "tipo:" << typeid(*terrenos[i]).name();
-        terrenos[i]->actualizar(3.0f);
+        terrenos[i]->actualizar(50.0f);
         //qdebug() << "  ok" << i;
     }
     //qdebug() << "movimiento ok";

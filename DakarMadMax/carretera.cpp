@@ -18,7 +18,7 @@ Carretera::Carretera(float x, float y, float ancho, float alto)
         fallback.fill(QColor(60, 60, 60));
         setPixmap(fallback);
     }
-    velocidadY = 3.0f;
+    velocidadY = 100.0f;
 }
 
 void Carretera::actualizar(float velocidadMundo) {

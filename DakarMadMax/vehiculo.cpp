@@ -72,6 +72,8 @@ Vehiculo::Vehiculo(float x, float y, TipoVehiculo tipo)
         setPixmap(px.scaled(ancho, alto, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     }
     setPos(x, y);
+    setZValue(1);
+
 }
 
 void Vehiculo::actualizar() {
