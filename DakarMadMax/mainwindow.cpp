@@ -52,7 +52,7 @@ void MainWindow::iniciarJuego(TipoVehiculo tipo) {
     rival->setZValue(2);
     scene->addItem(rival);
 
-    // Label del contador de tiempo — se agrega al view, no a la escena
+    // Label del contador de tiempo
     labelTiempo = new QLabel("2:00", view);
     labelTiempo->setGeometry(350, 10, 100, 30);
     labelTiempo->setAlignment(Qt::AlignCenter);
@@ -81,9 +81,11 @@ void MainWindow::gameLoop() {
 
     escenario->desplazar();
     jugador->actualizar();
-    // rival no se mueve por ahora
 
-    // ── CONTADOR DE TIEMPO ────────────────────────────────────────
+    // ── FIX: la IA se actualiza cada frame con la lista de terrenos ───────
+    rival->actualizarIA(terrenos);
+
+    // ── CONTADOR DE TIEMPO ────────────────────────────────────────────────
     tiempoRestante--;
     int minutos  = tiempoRestante / (60 * 60);
     int segundos = (tiempoRestante / 60) % 60;
@@ -91,20 +93,19 @@ void MainWindow::gameLoop() {
                              .arg(minutos)
                              .arg(segundos, 2, 10, QChar('0')));
 
-    // ── APARECE LA META cuando llega a 0 ─────────────────────────
+    // ── APARECE LA META cuando llega a 0 ──────────────────────────────────
     if (tiempoRestante == 0 && lineaMeta == nullptr) {
-        lineaMeta = new QGraphicsRectItem(0, 50, 600, 8);
+        lineaMeta = new QGraphicsRectItem(0, 0, 600, 8);
         lineaMeta->setBrush(QBrush(Qt::white));
         lineaMeta->setPen(Qt::NoPen);
         lineaMeta->setZValue(3);
         scene->addItem(lineaMeta);
     }
 
-    // ── LA META BAJA igual que los terrenos ───────────────────────
+    // ── LA META BAJA igual que los terrenos ───────────────────────────────
     if (lineaMeta != nullptr) {
         lineaMeta->setY(lineaMeta->y() + 10.0f);
 
-        // Detectar quién cruza primero
         QRectF rMeta    = lineaMeta->mapToScene(lineaMeta->boundingRect()).boundingRect();
         QRectF rJugador = jugador->mapToScene(jugador->boundingRect()).boundingRect();
         QRectF rRival   = rival->mapToScene(rival->boundingRect()).boundingRect();
@@ -122,7 +123,7 @@ void MainWindow::gameLoop() {
         }
     }
 
-    // ── GENERACIÓN DE TERRENOS ────────────────────────────────────
+    // ── GENERACIÓN DE TERRENOS ────────────────────────────────────────────
     contadorFrames++;
     if (contadorFrames >= 200) {
         contadorFrames = 0;
@@ -160,11 +161,11 @@ void MainWindow::gameLoop() {
         }
     }
 
-    // ── MOVER TERRENOS ────────────────────────────────────────────
+    // ── MOVER TERRENOS ────────────────────────────────────────────────────
     for (int i = 0; i < (int)terrenos.size(); i++)
         terrenos[i]->actualizar(10.0f);
 
-    // ── COLISIONES ────────────────────────────────────────────────
+    // ── COLISIONES DEL JUGADOR ────────────────────────────────────────────
     bool sobreTerreno = false;
     bool sobreFango   = false;
 
@@ -184,7 +185,7 @@ void MainWindow::gameLoop() {
     if (!sobreTerreno)
         jugador->setMultiplicador(0.0f);
 
-    // ── LIMPIAR TERRENOS FUERA DE PANTALLA ────────────────────────
+    // ── LIMPIAR TERRENOS FUERA DE PANTALLA ────────────────────────────────
     std::vector<Terreno*> sobrevivientes;
     for (int i = 0; i < (int)terrenos.size(); i++) {
         if (terrenos[i]->fueraDePantalla()) {

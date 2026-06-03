@@ -7,6 +7,7 @@
 #include <cmath>
 #include "tiposvehiculo.h"
 #include <QLabel>
+#include <QGraphicsScene>
 
 class Vehiculo : public QGraphicsPixmapItem {
 public:
@@ -18,29 +19,36 @@ public:
     void keyRelease(int key);
     TipoVehiculo getTipo() const { return tipoVehiculo; }
     void setEnFango(bool fango);
+    void actualizarIA(const std::vector<class Terreno*> &terrenos);
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
     void keyReleaseEvent(QKeyEvent *event) override;
 
 private:
-    TipoVehiculo tipoVehiculo;  // era: tipo
+    TipoVehiculo tipoVehiculo;
     float speed;
     float multiplicador = 0.0f;
     float limiteIzq, limiteDer, limiteArr, limiteAba;
     std::set<int> teclasPulsadas;
-    // Parábola de derrape
-    bool enFango = false;
-    bool derrapando = false;
-    float derrapeDirX = 0.0f;    // dirección del derrape (-1 izq, +1 der)
-    float derrapeFuerza = 0.0f;  // qué tan fuerte es el derrape
-    float derrapeTiempo = 0.0f;  // tiempo acumulado presionando la tecla en fango
-    float derrapePhi = 0.0f;     // fase actual de la parábola
-    Vehiculo       *rival;
-    QGraphicsRectItem *lineaMeta;
-    QLabel         *labelTiempo;
-    int            tiempoRestante;   // en frames (2min * 60fps * 60seg = 7200)
-    bool           juegoTerminado;
+
+    // Derrape en fango
+    bool  enFango       = false;
+    bool  derrapando    = false;
+    float derrapeDirX   = 0.0f;
+    float derrapeFuerza = 0.0f;
+    float derrapeTiempo = 0.0f;
+    float derrapePhi    = 0.0f;
+
+    // FIX: contador de bloqueo por llanta para la IA (miembro, no estático local)
+    int framesBloqueadoIA = 0;
+
+    // Punteros heredados del diseño original (no usados directamente aquí)
+    Vehiculo          *rival         = nullptr;
+    QGraphicsRectItem *lineaMeta     = nullptr;
+    QLabel            *labelTiempo   = nullptr;
+    int                tiempoRestante = 0;
+    bool               juegoTerminado = false;
 };
 
 #endif
