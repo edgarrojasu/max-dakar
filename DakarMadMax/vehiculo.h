@@ -2,9 +2,11 @@
 #define VEHICULO_H
 
 #include <QGraphicsPixmapItem>
-#include <QGraphicsScene>
+#include <QKeyEvent>
 #include <set>
+#include <cmath>
 #include "tiposvehiculo.h"
+#include <QLabel>
 
 class Vehiculo : public QGraphicsPixmapItem {
 public:
@@ -34,6 +36,11 @@ private:
     float derrapeFuerza = 0.0f;  // qué tan fuerte es el derrape
     float derrapeTiempo = 0.0f;  // tiempo acumulado presionando la tecla en fango
     float derrapePhi = 0.0f;     // fase actual de la parábola
+    Vehiculo       *rival;
+    QGraphicsRectItem *lineaMeta;
+    QLabel         *labelTiempo;
+    int            tiempoRestante;   // en frames (2min * 60fps * 60seg = 7200)
+    bool           juegoTerminado;
 };
 
 #endif

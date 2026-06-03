@@ -1,9 +1,11 @@
 #include "mainwindow.h"
-#include <qdebug>
-
+#include <QDebug>
+#include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), jugador(nullptr), escenario(nullptr), timer(nullptr)
+    : QMainWindow(parent), jugador(nullptr), rival(nullptr),
+    escenario(nullptr), timer(nullptr),
+    lineaMeta(nullptr), tiempoRestante(7200), juegoTerminado(false)
 {
     setFixedSize(800, 600);
     setWindowTitle("Dakar Mad Max");
@@ -11,122 +13,165 @@ MainWindow::MainWindow(QWidget *parent)
     stack = new QStackedWidget(this);
     setCentralWidget(stack);
 
-    // Pantalla de selección
     pantallaSeleccion = new SeleccionVehiculo();
-    stack->addWidget(pantallaSeleccion);   // índice 0
+    stack->addWidget(pantallaSeleccion);
 
-    // Vista del juego (se llena al seleccionar)
     view = new QGraphicsView();
     view->setFixedSize(800, 600);
     view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     view->setFrameStyle(0);
-    stack->addWidget(view);               // índice 1
+    stack->addWidget(view);
 
     connect(pantallaSeleccion, &SeleccionVehiculo::vehiculoSeleccionado,
             this, &MainWindow::iniciarJuego);
 
-    // Mostrar pantalla de selección primero
     stack->setCurrentIndex(0);
 }
 
 void MainWindow::iniciarJuego(TipoVehiculo tipo) {
     scene = new QGraphicsScene(0, 0, 800, 600, this);
     view->setScene(scene);
-
     escenario = new Escenario(scene);
 
-    jugador = new Vehiculo(270, 600, tipo);
+    // Jugador
+    jugador = new Vehiculo(200, 500, tipo);
+    jugador->setZValue(2);
     scene->addItem(jugador);
+
+    // Rival — elige un tipo distinto al jugador
+    TipoVehiculo tipoRival;
+    if (tipo == TipoVehiculo::Moto)
+        tipoRival = TipoVehiculo::CarroDakar;
+    else if (tipo == TipoVehiculo::CarroDakar)
+        tipoRival = TipoVehiculo::Camion;
+    else
+        tipoRival = TipoVehiculo::Moto;
+
+    rival = new Vehiculo(400, 500, tipoRival);
+    rival->setZValue(2);
+    scene->addItem(rival);
+
+    // Label del contador de tiempo — se agrega al view, no a la escena
+    labelTiempo = new QLabel("2:00", view);
+    labelTiempo->setGeometry(350, 10, 100, 30);
+    labelTiempo->setAlignment(Qt::AlignCenter);
+    labelTiempo->setStyleSheet(
+        "color: white; font-size: 18px; font-weight: bold;"
+        "background-color: rgba(0,0,0,150); border-radius: 6px;"
+        );
+    labelTiempo->show();
+
+    tiempoRestante = 7200;
+    juegoTerminado = false;
+    lineaMeta      = nullptr;
 
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &MainWindow::gameLoop);
     view->setSceneRect(0, 0, 600, 800);
-    view->centerOn(300, 400);
     timer->start(16);
 
-    // Cambiar a la pantalla del juego
     stack->setCurrentIndex(1);
     jugador->setFlag(QGraphicsItem::ItemIsFocusable);
     jugador->setFocus();
 }
 
 void MainWindow::gameLoop() {
-    //qdebug() << "--- inicio gameLoop, terrenos:" << terrenos.size();
+    if (juegoTerminado) return;
 
     escenario->desplazar();
-    //qdebug() << "escenario ok";
-
     jugador->actualizar();
-    //qdebug() << "jugador ok";
+    // rival no se mueve por ahora
 
-    // Generar carretera cada ~200 frames
+    // ── CONTADOR DE TIEMPO ────────────────────────────────────────
+    tiempoRestante--;
+    int minutos  = tiempoRestante / (60 * 60);
+    int segundos = (tiempoRestante / 60) % 60;
+    labelTiempo->setText(QString("%1:%2")
+                             .arg(minutos)
+                             .arg(segundos, 2, 10, QChar('0')));
+
+    // ── APARECE LA META cuando llega a 0 ─────────────────────────
+    if (tiempoRestante == 0 && lineaMeta == nullptr) {
+        lineaMeta = new QGraphicsRectItem(0, 50, 600, 8);
+        lineaMeta->setBrush(QBrush(Qt::white));
+        lineaMeta->setPen(Qt::NoPen);
+        lineaMeta->setZValue(3);
+        scene->addItem(lineaMeta);
+    }
+
+    // ── LA META BAJA igual que los terrenos ───────────────────────
+    if (lineaMeta != nullptr) {
+        lineaMeta->setY(lineaMeta->y() + 10.0f);
+
+        // Detectar quién cruza primero
+        QRectF rMeta    = lineaMeta->mapToScene(lineaMeta->boundingRect()).boundingRect();
+        QRectF rJugador = jugador->mapToScene(jugador->boundingRect()).boundingRect();
+        QRectF rRival   = rival->mapToScene(rival->boundingRect()).boundingRect();
+
+        QString ganador = "";
+        if (rJugador.intersects(rMeta))
+            ganador = "¡GANASTE!";
+        else if (rRival.intersects(rMeta))
+            ganador = "El rival ganó";
+
+        if (!ganador.isEmpty()) {
+            juegoTerminado = true;
+            timer->stop();
+            QMessageBox::information(this, "Fin de la carrera", ganador);
+        }
+    }
+
+    // ── GENERACIÓN DE TERRENOS ────────────────────────────────────
     contadorFrames++;
     if (contadorFrames >= 200) {
         contadorFrames = 0;
         int x     = QRandomGenerator::global()->bounded(20, 400);
         int ancho = QRandomGenerator::global()->bounded(100, 140);
-        int alto  = QRandomGenerator::global()->bounded(5000,7000);
+        int alto  = QRandomGenerator::global()->bounded(1000, 2000);
         Terreno *t = new Carretera((float)x, -(float)alto, (float)ancho, (float)alto);
         scene->addItem(t);
         terrenos.push_back(t);
     }
 
-    // Generar fango cada ~100 frames
     contadorFango++;
     if (contadorFango >= 200) {
         contadorFango = 0;
         int x     = QRandomGenerator::global()->bounded(20, 400);
-        int ancho = QRandomGenerator::global()->bounded(200, 300);
-        int alto  = QRandomGenerator::global()->bounded(1000,1500);
+        int ancho = QRandomGenerator::global()->bounded(100, 200);
+        int alto  = QRandomGenerator::global()->bounded(300, 500);
         Terreno *t = new Fango((float)x, -(float)alto, (float)ancho, (float)alto);
         scene->addItem(t);
         terrenos.push_back(t);
     }
 
-    // Generar llanta cada ~150 frames
     contadorLlantas++;
     if (contadorLlantas >= 150) {
         contadorLlantas = 0;
         float x   = (float)QRandomGenerator::global()->bounded(50, 500);
         float vel = 2.0f + QRandomGenerator::global()->bounded(0, 20) * 0.1f;
-
         Llanta *l = new Llanta(x, vel);
-
-        // Solo agregar si no está encima del jugador al generarse
         QRectF rJugador = jugador->mapToScene(jugador->boundingRect()).boundingRect();
-        QRectF rLlanta  = QRectF(x, -60, 60, 60);
-
-        if (!rJugador.intersects(rLlanta)) {
+        if (!rJugador.intersects(QRectF(x, -60, 60, 60))) {
             scene->addItem(l);
             terrenos.push_back(l);
         } else {
-            delete l;  // descartarla y esperar el próximo ciclo
+            delete l;
         }
     }
 
-    // Primero mover todos
-    //qdebug() << "moviendo terrenos...";
-    for (int i = 0; i < (int)terrenos.size(); i++) {
-        //qdebug() << "  moviendo" << i << "tipo:" << typeid(*terrenos[i]).name();
-        terrenos[i]->actualizar(50.0f);
-        //qdebug() << "  ok" << i;
-    }
-    //qdebug() << "movimiento ok";
+    // ── MOVER TERRENOS ────────────────────────────────────────────
+    for (int i = 0; i < (int)terrenos.size(); i++)
+        terrenos[i]->actualizar(10.0f);
 
-
-    // Detectar colisiones por separado
-    ////qdebug() << "colisiones...";
-
+    // ── COLISIONES ────────────────────────────────────────────────
     bool sobreTerreno = false;
     bool sobreFango   = false;
 
     for (int i = 0; i < (int)terrenos.size(); i++) {
-        if (!terrenos[i]->scene()) continue;  // ya fue removido
-
+        if (!terrenos[i]->scene()) continue;
         QRectF rJugador = jugador->mapToScene(jugador->boundingRect()).boundingRect();
         QRectF rTerreno = terrenos[i]->mapToScene(terrenos[i]->boundingRect()).boundingRect();
-
         if (rJugador.intersects(rTerreno)) {
             jugador->setMultiplicador(terrenos[i]->getMultiplicador());
             sobreTerreno = true;
@@ -138,12 +183,8 @@ void MainWindow::gameLoop() {
     jugador->setEnFango(sobreFango);
     if (!sobreTerreno)
         jugador->setMultiplicador(0.0f);
-    //qdebug() << "colisiones ok";
 
-
-    // Eliminar los que salieron de pantalla — loop separado al final
-    //qdebug() << "eliminando...";
-
+    // ── LIMPIAR TERRENOS FUERA DE PANTALLA ────────────────────────
     std::vector<Terreno*> sobrevivientes;
     for (int i = 0; i < (int)terrenos.size(); i++) {
         if (terrenos[i]->fueraDePantalla()) {
@@ -154,8 +195,6 @@ void MainWindow::gameLoop() {
         }
     }
     terrenos = sobrevivientes;
-    //qdebug() << "eliminacion ok";
-
 }
 
 MainWindow::~MainWindow() {}
