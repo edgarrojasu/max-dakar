@@ -18,7 +18,7 @@
 #include "carretera.h"
 #include "fango.h"
 #include "llanta.h"
-#include <QLabel>
+#include "nivel2.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -30,10 +30,15 @@ public:
 private slots:
     void iniciarJuego(TipoVehiculo tipo);
     void gameLoop();
+    void iniciarNivel2();   // se llama cuando el jugador gana el nivel 1
 
 private:
+    // ── Navegación ────────────────────────────────────────────────────────
     QStackedWidget    *stack;
     SeleccionVehiculo *pantallaSeleccion;
+    Nivel2            *pantallaNivel2;     // nivel 2 (vista lateral)
+
+    // ── Nivel 1 ───────────────────────────────────────────────────────────
     QGraphicsScene    *scene;
     QGraphicsView     *view;
     QTimer            *timer;
@@ -45,6 +50,8 @@ private:
     QLabel            *labelTiempo;
     int                tiempoRestante;
     bool               juegoTerminado;
+
+    TipoVehiculo       tipoElegido;   // guardamos el tipo para pasarlo al nivel 2
 
     std::vector<Terreno*> terrenos;
     int contadorFrames  = 0;

@@ -5,7 +5,8 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), jugador(nullptr), rival(nullptr),
     escenario(nullptr), timer(nullptr),
-    lineaMeta(nullptr), tiempoRestante(7200), juegoTerminado(false)
+    lineaMeta(nullptr), tiempoRestante(7200), juegoTerminado(false),
+    tipoElegido(TipoVehiculo::CarroDakar), pantallaNivel2(nullptr)
 {
     setFixedSize(800, 600);
     setWindowTitle("Dakar Mad Max");
@@ -13,9 +14,11 @@ MainWindow::MainWindow(QWidget *parent)
     stack = new QStackedWidget(this);
     setCentralWidget(stack);
 
+    // índice 0 — selección de vehículo
     pantallaSeleccion = new SeleccionVehiculo();
     stack->addWidget(pantallaSeleccion);
 
+    // índice 1 — nivel 1 (vista cenital)
     view = new QGraphicsView();
     view->setFixedSize(800, 600);
     view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -23,23 +26,27 @@ MainWindow::MainWindow(QWidget *parent)
     view->setFrameStyle(0);
     stack->addWidget(view);
 
+    // índice 2 — nivel 2 (vista lateral) — se crea en iniciarNivel2()
+    // para tener el tipo de vehículo disponible
+
     connect(pantallaSeleccion, &SeleccionVehiculo::vehiculoSeleccionado,
             this, &MainWindow::iniciarJuego);
 
     stack->setCurrentIndex(0);
 }
 
+// ── Nivel 1 ───────────────────────────────────────────────────────────────────
 void MainWindow::iniciarJuego(TipoVehiculo tipo) {
+    tipoElegido = tipo;
+
     scene = new QGraphicsScene(0, 0, 800, 600, this);
     view->setScene(scene);
     escenario = new Escenario(scene);
 
-    // Jugador
     jugador = new Vehiculo(200, 500, tipo);
     jugador->setZValue(2);
     scene->addItem(jugador);
 
-    // Rival — elige un tipo distinto al jugador
     TipoVehiculo tipoRival;
     if (tipo == TipoVehiculo::Moto)
         tipoRival = TipoVehiculo::CarroDakar;
@@ -52,14 +59,12 @@ void MainWindow::iniciarJuego(TipoVehiculo tipo) {
     rival->setZValue(2);
     scene->addItem(rival);
 
-    // Label del contador de tiempo
     labelTiempo = new QLabel("2:00", view);
     labelTiempo->setGeometry(350, 10, 100, 30);
     labelTiempo->setAlignment(Qt::AlignCenter);
     labelTiempo->setStyleSheet(
         "color: white; font-size: 18px; font-weight: bold;"
-        "background-color: rgba(0,0,0,150); border-radius: 6px;"
-        );
+        "background-color: rgba(0,0,0,150); border-radius: 6px;");
     labelTiempo->show();
 
     tiempoRestante = 7200;
@@ -81,11 +86,8 @@ void MainWindow::gameLoop() {
 
     escenario->desplazar();
     jugador->actualizar();
-
-    // ── FIX: la IA se actualiza cada frame con la lista de terrenos ───────
     rival->actualizarIA(terrenos);
 
-    // ── CONTADOR DE TIEMPO ────────────────────────────────────────────────
     tiempoRestante--;
     int minutos  = tiempoRestante / (60 * 60);
     int segundos = (tiempoRestante / 60) % 60;
@@ -93,16 +95,14 @@ void MainWindow::gameLoop() {
                              .arg(minutos)
                              .arg(segundos, 2, 10, QChar('0')));
 
-    // ── APARECE LA META cuando llega a 0 ──────────────────────────────────
     if (tiempoRestante == 0 && lineaMeta == nullptr) {
-        lineaMeta = new QGraphicsRectItem(0, 0, 600, 8);
+        lineaMeta = new QGraphicsRectItem(0, 50, 600, 8);
         lineaMeta->setBrush(QBrush(Qt::white));
         lineaMeta->setPen(Qt::NoPen);
         lineaMeta->setZValue(3);
         scene->addItem(lineaMeta);
     }
 
-    // ── LA META BAJA igual que los terrenos ───────────────────────────────
     if (lineaMeta != nullptr) {
         lineaMeta->setY(lineaMeta->y() + 10.0f);
 
@@ -112,18 +112,29 @@ void MainWindow::gameLoop() {
 
         QString ganador = "";
         if (rJugador.intersects(rMeta))
-            ganador = "¡GANASTE!";
+            ganador = "jugador";
         else if (rRival.intersects(rMeta))
-            ganador = "El rival ganó";
+            ganador = "rival";
 
         if (!ganador.isEmpty()) {
             juegoTerminado = true;
             timer->stop();
-            QMessageBox::information(this, "Fin de la carrera", ganador);
+
+            if (ganador == "jugador") {
+                // Mostrar mensaje y pasar al nivel 2
+                QMessageBox::information(this, "Nivel 1 completado",
+                    "¡GANASTE la carrera!\n\nAhora viene el Nivel 2: ¡vista lateral!");
+                iniciarNivel2();
+            } else {
+                QMessageBox::information(this, "Fin de la carrera",
+                    "El rival ganó. ¡Vuelve a intentarlo!");
+                // Volver a la selección
+                stack->setCurrentIndex(0);
+            }
         }
     }
 
-    // ── GENERACIÓN DE TERRENOS ────────────────────────────────────────────
+    // ── Terrenos ──────────────────────────────────────────────────────────
     contadorFrames++;
     if (contadorFrames >= 200) {
         contadorFrames = 0;
@@ -161,11 +172,9 @@ void MainWindow::gameLoop() {
         }
     }
 
-    // ── MOVER TERRENOS ────────────────────────────────────────────────────
     for (int i = 0; i < (int)terrenos.size(); i++)
         terrenos[i]->actualizar(10.0f);
 
-    // ── COLISIONES DEL JUGADOR ────────────────────────────────────────────
     bool sobreTerreno = false;
     bool sobreFango   = false;
 
@@ -185,7 +194,6 @@ void MainWindow::gameLoop() {
     if (!sobreTerreno)
         jugador->setMultiplicador(0.0f);
 
-    // ── LIMPIAR TERRENOS FUERA DE PANTALLA ────────────────────────────────
     std::vector<Terreno*> sobrevivientes;
     for (int i = 0; i < (int)terrenos.size(); i++) {
         if (terrenos[i]->fueraDePantalla()) {
@@ -196,6 +204,36 @@ void MainWindow::gameLoop() {
         }
     }
     terrenos = sobrevivientes;
+}
+
+// ── Nivel 2 ───────────────────────────────────────────────────────────────────
+void MainWindow::iniciarNivel2() {
+    // Crear el widget del nivel 2 con el vehículo que eligió el jugador
+    pantallaNivel2 = new Nivel2(tipoElegido);
+
+    // Redimensionar la ventana para acomodar la vista lateral (800x400)
+    setFixedSize(800, 400);
+
+    stack->addWidget(pantallaNivel2);          // índice 2
+    stack->setCurrentWidget(pantallaNivel2);
+
+    // Pasar el foco para que reciba eventos de teclado
+    pantallaNivel2->setFocus();
+
+    // Conectar señales del nivel 2
+    connect(pantallaNivel2, &Nivel2::nivelCompletado, this, [this]() {
+        QMessageBox::information(this, "¡Juego completado!",
+            "🏁 ¡Completaste los dos niveles!\n\n¡Eres el campeón del Dakar Mad Max!");
+        setFixedSize(800, 600);
+        stack->setCurrentIndex(0);   // volver al inicio
+    });
+
+    connect(pantallaNivel2, &Nivel2::nivelFallado, this, [this]() {
+        QMessageBox::information(this, "Nivel 2",
+            "Caíste en un agujero... ¡Inténtalo de nuevo!");
+        setFixedSize(800, 600);
+        stack->setCurrentIndex(0);   // volver al inicio
+    });
 }
 
 MainWindow::~MainWindow() {}

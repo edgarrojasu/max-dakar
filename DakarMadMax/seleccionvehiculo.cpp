@@ -39,22 +39,6 @@ SeleccionVehiculo::SeleccionVehiculo(QWidget *parent)
     crearBoton(TipoVehiculo::Moto,      ":/imagenes/motoCenital.png",   "MOTO",        100,  200);
     crearBoton(TipoVehiculo::CarroDakar,":/imagenes/carroCenital.png",  "CARRO DAKAR", 330, 200);
     crearBoton(TipoVehiculo::Camion,    ":/imagenes/camionCenital.png", "CAMIÓN",      570, 200);
-
-    // Descripción de cada vehículo
-    QLabel *descMoto = new QLabel("Rápida en\ncarretera\nVulnerable\nen fango", this);
-    descMoto->setGeometry(100, 430, 120, 100);
-    descMoto->setAlignment(Qt::AlignCenter);
-    descMoto->setStyleSheet("color: #cccccc; font-size: 11px; background-color: rgba(0,0,0,150);");
-
-    QLabel *descDakar = new QLabel("Equilibrado\nen todos\nlos terrenos", this);
-    descDakar->setGeometry(330, 430, 120, 100);
-    descDakar->setAlignment(Qt::AlignCenter);
-    descDakar->setStyleSheet("color: #cccccc; font-size: 11px; background-color: rgba(0,0,0,150);");
-
-    QLabel *descCamion = new QLabel("Lento pero\nresistente\na impactos", this);
-    descCamion->setGeometry(570, 430, 120, 100);
-    descCamion->setAlignment(Qt::AlignCenter);
-    descCamion->setStyleSheet("color: #cccccc; font-size: 11px; background-color: rgba(0,0,0,150);");
 }
 
 void SeleccionVehiculo::crearBoton(TipoVehiculo tipo, const QString &imagen,

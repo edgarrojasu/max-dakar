@@ -15,7 +15,8 @@ SOURCES += \
     escenario.cpp \
     terreno.cpp \
     vehiculo.cpp \
-    seleccionvehiculo.cpp
+    seleccionvehiculo.cpp \
+    nivel2.cpp
 
 HEADERS += \
     carretera.h \
@@ -26,7 +27,8 @@ HEADERS += \
     terreno.h \
     vehiculo.h \
     seleccionvehiculo.h \
-    tiposvehiculo.h
+    tiposvehiculo.h \
+    nivel2.h
 
 FORMS += \
     mainwindow.ui
