@@ -175,7 +175,7 @@ Nivel2::Nivel2(TipoVehiculo tipo, QWidget *parent)
     // Cada agujero tarda ~intervaloAgujero frames en generarse (empieza en 300,
     // baja hasta 100). Promedio ~200 frames × 15 agujeros × velocidadMundo(4) = 12000 px
     // Le sumamos margen extra para que no llegue antes de tiempo.
-    meta->setPos(ANCHO_VISTA + 14000.0f, SUELO_Y - 60);
+    meta->setPos(ANCHO_VISTA + 25000.0f, SUELO_Y - 60);
     meta->setZValue(4);
     scene->addItem(meta);
 
@@ -266,7 +266,7 @@ void Nivel2::gameLoop() {
         contadorAgujero--;
         if (contadorAgujero <= 0) {
             generarAgujero();
-            intervaloAgujero = qMax(100, intervaloAgujero - 12);
+            intervaloAgujero = qMax(80, intervaloAgujero - 12);
             contadorAgujero  = intervaloAgujero;
         }
     }
@@ -387,7 +387,7 @@ void Nivel2::ocultarLetra() {
 
 void Nivel2::generarAgujero() {
     // Ancho crece ligeramente con cada agujero (más difícil)
-    float anchoBase = 120.0f + agujerosSuperados * 4.0f;
+    float anchoBase = 90.0f + agujerosSuperados * 4.0f;
     float ancho = anchoBase + QRandomGenerator::global()->bounded(60);
     float xInicio = ANCHO_VISTA + 10.0f;
     int anchoI = (int)ancho;
