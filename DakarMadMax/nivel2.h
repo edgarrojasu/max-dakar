@@ -107,7 +107,7 @@ private:
     void ocultarLetra();
     void generarAgujero();
     void actualizarSuelo();
-    void actualizarAgujeros();
+    void actualizarAgujeros(bool mover);
     void actualizarFondo();
     void finalizarNivel(bool exito);
 };

@@ -15,7 +15,7 @@ static const float SUELO_Y         = 300.0f;   // tope superior del suelo
 static const float ALTO_SUELO      = 100.0f;   // grosor visible del suelo
 static const float VEH_X           = 120.0f;   // X fija del vehículo
 static const float GRAVEDAD        = 0.4f;
-static const float FUERZA_SALTO    = -16.0f;
+static const float FUERZA_SALTO    = -18.0f;
 static const int   TOTAL_AGUJEROS  = 15;       // saltos para ganar
 
 // Spritesheet motoN2: 3 cols × 1 fila = 3 frames
@@ -31,7 +31,7 @@ Nivel2::Nivel2(TipoVehiculo tipo, QWidget *parent)
     intervaloAgujero(300),      // separación inicial entre agujeros
     letraRequerida('A'),
     esperandoTecla(false),
-    tiempoLimiteLetra(180),     // 3 s a 60 fps — se reduce con cada agujero
+    tiempoLimiteLetra(90),      // fijo — ver mostrarLetra() para cambiarlo
     contadorLetra(0),
     enSalto(false),
     agujeroObjetivo(0),
@@ -171,8 +171,11 @@ Nivel2::Nivel2(TipoVehiculo tipo, QWidget *parent)
                         ((r+c)%2==0) ? Qt::white : Qt::black);
     pm.end();
     meta = new QGraphicsPixmapItem(pxMeta);
-    // La meta aparece después de todos los agujeros: distancia amplia
-    meta->setPos(ANCHO_VISTA + TOTAL_AGUJEROS * 400.0f, SUELO_Y - 60);
+    // La meta debe llegar DESPUÉS de que se superen los 15 agujeros.
+    // Cada agujero tarda ~intervaloAgujero frames en generarse (empieza en 300,
+    // baja hasta 100). Promedio ~200 frames × 15 agujeros × velocidadMundo(4) = 12000 px
+    // Le sumamos margen extra para que no llegue antes de tiempo.
+    meta->setPos(ANCHO_VISTA + 14000.0f, SUELO_Y - 60);
     meta->setZValue(4);
     scene->addItem(meta);
 
@@ -235,7 +238,7 @@ void Nivel2::gameLoop() {
     // ── Animar sprite de la moto ───────────────────────────────────────────
     if (estado == EstadoNivel2::Corriendo || estado == EstadoNivel2::Saltando) {
         contadorFrameSprite++;
-        if (contadorFrameSprite >= 5) {   // cada 5 frames cambia pose
+        if (contadorFrameSprite >= 5) {
             contadorFrameSprite = 0;
             frameSprite = (frameSprite + 1) % SPRITE_FRAMES;
             vehiculo->setPixmap(motoFrames[frameSprite]);
@@ -255,15 +258,14 @@ void Nivel2::gameLoop() {
         return;
     }
 
-    // ── Agujeros ──────────────────────────────────────────────────────────
-    actualizarAgujeros();
+    // ── Agujeros (siempre se mueven, el mundo nunca se pausa) ─────────────
+    actualizarAgujeros(true);
 
     // ── Generar agujeros ──────────────────────────────────────────────────
     if (estado == EstadoNivel2::Corriendo && agujerosSuperados < TOTAL_AGUJEROS) {
         contadorAgujero--;
         if (contadorAgujero <= 0) {
             generarAgujero();
-            // A partir del agujero 5, el intervalo se acorta progresivamente
             intervaloAgujero = qMax(100, intervaloAgujero - 12);
             contadorAgujero  = intervaloAgujero;
         }
@@ -363,8 +365,11 @@ void Nivel2::mostrarLetra() {
     labelPista->setText(QString("  ¡Presiona  \"%1\"  para saltar!  ").arg(letraRequerida));
     labelPista->show();
 
-    // Barra de tiempo: el límite disminuye 8 frames por agujero superado (mín 60 ≈ 1 s)
-    tiempoLimiteLetra = qMax(60, 180 - agujerosSuperados * 8);
+    // ── TIEMPO LÍMITE PARA PRESIONAR LA TECLA ────────────────────────────
+    // Cambia este valor para ajustar cuánto tiempo tiene el jugador.
+    // Está en frames (60 frames = 1 segundo).
+    tiempoLimiteLetra = 120;   // 1.5 segundos
+    // ─────────────────────────────────────────────────────────────────────
     labelTiempoBar->setGeometry(330, 243, 140, 8);
     labelTiempoBar->setStyleSheet("background-color: #FFD700; border-radius: 4px;");
     labelTiempoBar->show();
@@ -452,20 +457,25 @@ void Nivel2::actualizarSuelo() {
     if (suelo2->x() + ANCHO_VISTA < 0) suelo2->setX(suelo1->x() + ANCHO_VISTA);
 }
 
-void Nivel2::actualizarAgujeros() {
+void Nivel2::actualizarAgujeros(bool mover) {
     QVector<Agujero> vivos;
 
     for (Agujero &ag : agujeros) {
-        ag.xEscena -= velocidadMundo;
-        if (ag.imgItem)   ag.imgItem->setX(ag.xEscena);
-        if (ag.tapaFondo) ag.tapaFondo->setX(ag.xEscena);
+        if (mover) {
+            ag.xEscena -= velocidadMundo;
+            if (ag.imgItem)   ag.imgItem->setX(ag.xEscena);
+            if (ag.tapaFondo) ag.tapaFondo->setX(ag.xEscena);
+        }
 
         float xDer = ag.xEscena + ag.ancho;
 
-        // Mostrar letra cuando el agujero está a ~220 px del vehículo
+        // Mostrar letra cuando el agujero está a ~350 px del borde derecho
+        // de la moto — tiempo suficiente para reaccionar con el mundo corriendo.
+        // La letra aparece una sola vez por agujero (letraMostrada lo garantiza).
         if (!ag.letraMostrada && !ag.superado) {
-            float dist = ag.xEscena - (VEH_X + 80);
-            if (dist < 220.0f && dist > 0.0f && estado == EstadoNivel2::Corriendo) {
+            float distAlVehiculo = ag.xEscena - (VEH_X + vehiculo->boundingRect().width());
+            if (distAlVehiculo < 350.0f && distAlVehiculo > 0.0f
+                && (estado == EstadoNivel2::Corriendo || estado == EstadoNivel2::MostrandoLetra)) {
                 ag.letraMostrada = true;
                 mostrarLetra();
             }
