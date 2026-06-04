@@ -111,11 +111,27 @@ Nivel2::Nivel2(TipoVehiculo tipo, QWidget *parent)
     if (!sheet.isNull()) {
         int fw = sheet.width()  / SPRITE_COLS;
         int fh = sheet.height() / SPRITE_FILAS;
-        for (int fila = 0; fila < SPRITE_FILAS; fila++)
-            for (int col  = 0; col  < SPRITE_COLS; col++)
-                motoFrames.append(
-                    sheet.copy(col*fw, fila*fh, fw, fh)
-                         .scaled(120, 80, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        for (int fila = 0; fila < SPRITE_FILAS; fila++) {
+            for (int col = 0; col < SPRITE_COLS; col++) {
+                QPixmap frame = sheet.copy(col*fw, fila*fh, fw, fh);
+
+                // Voltear horizontalmente (de izquierda a derecha)
+                frame = frame.transformed(QTransform().scale(-1, 1));
+
+                // ── TAMAÑO DE LA MOTO ─────────────────────────────────────
+                // KeepAspectRatio limitaba el tamaño al valor más pequeño.
+                // Con IgnoreAspectRatio ancho y alto son independientes.
+                //   ancho: qué tan larga se ve la moto
+                //   alto:  qué tan alta es — controla también qué tan pegada
+                //          queda al suelo (vehYBase = SUELO_Y - alto)
+                //          Si flota → súbelo. Si se hunde → bájalo.
+                frame = frame.scaled(180, 200,
+                                     Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+                // ─────────────────────────────────────────────────────────
+
+                motoFrames.append(frame);
+            }
+        }
     } else {
         QPixmap fb(120, 80); fb.fill(Qt::red);
         for (int i = 0; i < SPRITE_FRAMES; i++) motoFrames.append(fb);
@@ -123,7 +139,15 @@ Nivel2::Nivel2(TipoVehiculo tipo, QWidget *parent)
 #endif
 
     vehiculo = new QGraphicsPixmapItem(motoFrames[0]);
-    vehYBase  = SUELO_Y - motoFrames[0].height();   // 300 - 80 = 220
+
+    // ── POSICIÓN VERTICAL DE LA MOTO ─────────────────────────────────────
+    // VEH_Y_OFFSET desplaza la moto hacia abajo sin cambiar su tamaño.
+    // Número positivo = baja, número negativo = sube.
+    // Ajústalo hasta que las ruedas toquen visualmente el suelo.
+    const float VEH_Y_OFFSET = 100.0f;
+    // ─────────────────────────────────────────────────────────────────────
+
+    vehYBase  = SUELO_Y - motoFrames[0].height() + VEH_Y_OFFSET;
     vehY      = vehYBase;
     velY      = 0.0f;
     vehiculo->setPos(VEH_X, vehY);
