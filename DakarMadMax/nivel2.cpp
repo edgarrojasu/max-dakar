@@ -109,11 +109,17 @@ Nivel2::Nivel2(TipoVehiculo tipo, QWidget *parent)
     // RELEASE: spritesheet motoN2.png — 3 cols × 1 fila = 3 frames
     QPixmap sheet(":/imagenes/motoN2.png");
     if (!sheet.isNull()) {
-        int fw = sheet.width()  / SPRITE_COLS;
-        int fh = sheet.height() / SPRITE_FILAS;
-        for (int fila = 0; fila < SPRITE_FILAS; fila++) {
-            for (int col = 0; col < SPRITE_COLS; col++) {
-                QPixmap frame = sheet.copy(col*fw, fila*fh, fw, fh);
+        // ── COORDENADAS MANUALES DE CADA FRAME ───────────────────────────
+        // Ajusta cada fila: {x, y, ancho, alto} en píxeles dentro del spritesheet.
+        // Abre motoN2.png en un editor de imágenes y mide cada frame.
+        struct FrameRect { int x, y, w, h; };
+        QVector<FrameRect> frameRects = {
+            { 48,   0, 490, 630 },   // frame 1 — ajusta estos valores
+            { 638, 0, 490, 630 },   // frame 2
+            { 1225, 0, 490, 630 },   // frame 3
+        };
+        for (const FrameRect &fr : frameRects) {
+            QPixmap frame = sheet.copy(fr.x, fr.y, fr.w, fr.h);
 
                 // Voltear horizontalmente (de izquierda a derecha)
                 frame = frame.transformed(QTransform().scale(-1, 1));
@@ -131,7 +137,7 @@ Nivel2::Nivel2(TipoVehiculo tipo, QWidget *parent)
 
                 motoFrames.append(frame);
             }
-        }
+
     } else {
         QPixmap fb(120, 80); fb.fill(Qt::red);
         for (int i = 0; i < SPRITE_FRAMES; i++) motoFrames.append(fb);
@@ -144,7 +150,7 @@ Nivel2::Nivel2(TipoVehiculo tipo, QWidget *parent)
     // VEH_Y_OFFSET desplaza la moto hacia abajo sin cambiar su tamaño.
     // Número positivo = baja, número negativo = sube.
     // Ajústalo hasta que las ruedas toquen visualmente el suelo.
-    const float VEH_Y_OFFSET = 100.0f;
+    const float VEH_Y_OFFSET = 60.0f;
     // ─────────────────────────────────────────────────────────────────────
 
     vehYBase  = SUELO_Y - motoFrames[0].height() + VEH_Y_OFFSET;
