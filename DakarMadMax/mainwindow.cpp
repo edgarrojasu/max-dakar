@@ -2,6 +2,9 @@
 #include <QDebug>
 #include <QMessageBox>
 
+// Debe coincidir con el define en nivel2.cpp y seleccionvehiculo.cpp
+#define DEBUG_NIVEL2
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), jugador(nullptr), rival(nullptr),
     escenario(nullptr), timer(nullptr),
@@ -26,11 +29,16 @@ MainWindow::MainWindow(QWidget *parent)
     view->setFrameStyle(0);
     stack->addWidget(view);
 
-    // índice 2 — nivel 2 (vista lateral) — se crea en iniciarNivel2()
-    // para tener el tipo de vehículo disponible
-
     connect(pantallaSeleccion, &SeleccionVehiculo::vehiculoSeleccionado,
             this, &MainWindow::iniciarJuego);
+
+#ifdef DEBUG_NIVEL2
+    // Botón debug: salta directo al nivel 2 con Moto por defecto
+    connect(pantallaSeleccion, &SeleccionVehiculo::irANivel2Debug, this, [this]() {
+        tipoElegido = TipoVehiculo::Moto;
+        iniciarNivel2();
+    });
+#endif
 
     stack->setCurrentIndex(0);
 }

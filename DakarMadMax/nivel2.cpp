@@ -3,14 +3,19 @@
 #include <QFont>
 #include <cmath>
 
+// ┌─────────────────────────────────────────────────────────────────────────┐
+// │  MODO DEBUG — descomenta esta línea para activar cajas de prueba        │
+// └─────────────────────────────────────────────────────────────────────────┘
+// #define DEBUG_NIVEL2
+
 // ── Constantes de layout ──────────────────────────────────────────────────────
 static const int   ANCHO_VISTA     = 800;
 static const int   ALTO_VISTA      = 400;
 static const float SUELO_Y         = 300.0f;   // tope superior del suelo
 static const float ALTO_SUELO      = 100.0f;   // grosor visible del suelo
 static const float VEH_X           = 120.0f;   // X fija del vehículo
-static const float GRAVEDAD        = 0.55f;
-static const float FUERZA_SALTO    = -13.0f;
+static const float GRAVEDAD        = 0.4f;
+static const float FUERZA_SALTO    = -16.0f;
 static const int   TOTAL_AGUJEROS  = 15;       // saltos para ganar
 
 // Spritesheet motoN2: 3 cols × 1 fila = 3 frames
@@ -86,7 +91,22 @@ Nivel2::Nivel2(TipoVehiculo tipo, QWidget *parent)
     suelo2->setZValue(1);
     scene->addItem(suelo2);
 
-    // ── Spritesheet moto (motoN2.png — 3×2 frames) ────────────────────────
+    // ── Vehículo ──────────────────────────────────────────────────────────
+#ifdef DEBUG_NIVEL2
+    // DEBUG: caja azul sólida de 120×80 px en lugar del sprite
+    {
+        QPixmap fb(120, 80);
+        QPainter dbgP(&fb);
+        dbgP.fillRect(0, 0, 120, 80, QColor(30, 120, 220));
+        dbgP.setPen(QPen(Qt::white, 2));
+        dbgP.drawRect(1, 1, 117, 77);
+        dbgP.setPen(Qt::white);
+        dbgP.drawText(fb.rect(), Qt::AlignCenter, "MOTO");
+        dbgP.end();
+        for (int i = 0; i < SPRITE_FRAMES; i++) motoFrames.append(fb);
+    }
+#else
+    // RELEASE: spritesheet motoN2.png — 3 cols × 1 fila = 3 frames
     QPixmap sheet(":/imagenes/motoN2.png");
     if (!sheet.isNull()) {
         int fw = sheet.width()  / SPRITE_COLS;
@@ -100,9 +120,10 @@ Nivel2::Nivel2(TipoVehiculo tipo, QWidget *parent)
         QPixmap fb(120, 80); fb.fill(Qt::red);
         for (int i = 0; i < SPRITE_FRAMES; i++) motoFrames.append(fb);
     }
+#endif
 
     vehiculo = new QGraphicsPixmapItem(motoFrames[0]);
-    vehYBase  = SUELO_Y - motoFrames[0].height();
+    vehYBase  = SUELO_Y - motoFrames[0].height();   // 300 - 80 = 220
     vehY      = vehYBase;
     velY      = 0.0f;
     vehiculo->setPos(VEH_X, vehY);
@@ -334,15 +355,40 @@ void Nivel2::generarAgujero() {
     float anchoBase = 120.0f + agujerosSuperados * 4.0f;
     float ancho = anchoBase + QRandomGenerator::global()->bounded(60);
     float xInicio = ANCHO_VISTA + 10.0f;
-
-    // ── Imagen del hueco (hueco.png) ──────────────────────────────────────
-    QPixmap pxHueco(":/imagenes/hueco.png");
-    QGraphicsPixmapItem *imgHueco = nullptr;
-    QGraphicsRectItem   *rectTapa = nullptr;
-
     int anchoI = (int)ancho;
     int altoI  = (int)ALTO_SUELO + 10;
 
+    QGraphicsPixmapItem *imgHueco = nullptr;
+    QGraphicsRectItem   *tapaFondo = nullptr;
+
+#ifdef DEBUG_NIVEL2
+    // DEBUG: caja roja con borde blanco y etiqueta del número de agujero
+    {
+        QPixmap fb(anchoI, altoI);
+        QPainter dbgP(&fb);
+        dbgP.fillRect(0, 0, anchoI, altoI, QColor(180, 30, 30));
+        dbgP.setPen(QPen(Qt::white, 2));
+        dbgP.drawRect(1, 1, anchoI-2, altoI-2);
+        dbgP.setPen(Qt::white);
+        QFont f; f.setPixelSize(18); f.setBold(true);
+        dbgP.setFont(f);
+        dbgP.drawText(fb.rect(), Qt::AlignCenter,
+                      QString("H%1\n%2px").arg(agujerosSuperados+1).arg(anchoI));
+        dbgP.end();
+        imgHueco = new QGraphicsPixmapItem(fb);
+        imgHueco->setPos(xInicio, SUELO_Y);
+        imgHueco->setZValue(2);
+        scene->addItem(imgHueco);
+    }
+    // En debug no necesitamos tapaFondo separado (la caja ya tapa el suelo)
+    tapaFondo = new QGraphicsRectItem(xInicio, SUELO_Y, ancho, ALTO_SUELO + 10);
+    tapaFondo->setBrush(Qt::transparent);
+    tapaFondo->setPen(Qt::NoPen);
+    tapaFondo->setZValue(1);
+    scene->addItem(tapaFondo);
+#else
+    // RELEASE: imagen hueco.png
+    QPixmap pxHueco(":/imagenes/hueco.png");
     if (!pxHueco.isNull()) {
         QPixmap huecoEsc = pxHueco.scaled(anchoI, altoI,
                                            Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
@@ -350,29 +396,22 @@ void Nivel2::generarAgujero() {
         imgHueco->setPos(xInicio, SUELO_Y);
         imgHueco->setZValue(2);
         scene->addItem(imgHueco);
-    } else {
-        // Fallback: rectángulo negro
-        rectTapa = new QGraphicsRectItem(xInicio, SUELO_Y, ancho, ALTO_SUELO + 10);
-        rectTapa->setBrush(Qt::black);
-        rectTapa->setPen(Qt::NoPen);
-        rectTapa->setZValue(2);
-        scene->addItem(rectTapa);
     }
-
-    // Tapar el suelo debajo del hueco con negro para que no se vea el suelo
-    QGraphicsRectItem *tapaFondo = new QGraphicsRectItem(xInicio, SUELO_Y, ancho, ALTO_SUELO + 10);
+    // Tapar el suelo debajo del hueco
+    tapaFondo = new QGraphicsRectItem(xInicio, SUELO_Y, ancho, ALTO_SUELO + 10);
     tapaFondo->setBrush(QColor(0, 0, 0, 200));
     tapaFondo->setPen(Qt::NoPen);
-    tapaFondo->setZValue(imgHueco ? 1 : 3);   // debajo de la imagen si existe
+    tapaFondo->setZValue(imgHueco ? 1 : 3);
     scene->addItem(tapaFondo);
+#endif
 
     Agujero ag;
-    ag.imgItem      = imgHueco;
-    ag.tapaFondo    = tapaFondo;
-    ag.xEscena      = xInicio;
-    ag.ancho        = ancho;
+    ag.imgItem       = imgHueco;
+    ag.tapaFondo     = tapaFondo;
+    ag.xEscena       = xInicio;
+    ag.ancho         = ancho;
     ag.letraMostrada = false;
-    ag.superado     = false;
+    ag.superado      = false;
     agujeros.append(ag);
 }
 
