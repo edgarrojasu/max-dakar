@@ -4,6 +4,11 @@
 #include <QPixmap>
 #include <QFont>
 
+// ┌─────────────────────────────────────────────────────────────────────────┐
+// │  MODO DEBUG — comenta esta línea para volver al juego normal            │
+// └─────────────────────────────────────────────────────────────────────────┘
+#define DEBUG_NIVEL2
+
 SeleccionVehiculo::SeleccionVehiculo(QWidget *parent)
     : QWidget(parent)
 {
@@ -12,7 +17,7 @@ SeleccionVehiculo::SeleccionVehiculo(QWidget *parent)
     fondo->setGeometry(0, 0, 800, 600);
     QPixmap fondoPx(":/imagenes/fondoMenu.png");
     fondo->setPixmap(fondoPx.scaled(800, 600, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
-    fondo->lower();  // manda el fondo atrás de todo
+    fondo->lower();
     setFixedSize(800, 600);
     setStyleSheet("background-color: transparent;");
 
@@ -55,28 +60,47 @@ SeleccionVehiculo::SeleccionVehiculo(QWidget *parent)
     descCamion->setGeometry(570, 430, 120, 100);
     descCamion->setAlignment(Qt::AlignCenter);
     descCamion->setStyleSheet("color: #cccccc; font-size: 11px; background-color: rgba(0,0,0,150);");
+
+#ifdef DEBUG_NIVEL2
+    // ── BOTÓN DEBUG: ir directo al nivel 2 ───────────────────────────────
+    QPushButton *btnDebug = new QPushButton("⚙  DEBUG → Nivel 2", this);
+    btnDebug->setGeometry(290, 545, 220, 34);
+    btnDebug->setStyleSheet(
+        "QPushButton {"
+        "  background-color: #333333;"
+        "  color: #00FF88;"
+        "  font-weight: bold;"
+        "  border: 1px solid #00FF88;"
+        "  border-radius: 6px;"
+        "  font-size: 12px;"
+        "}"
+        "QPushButton:hover { background-color: #444444; }"
+        "QPushButton:pressed { background-color: #222222; }"
+    );
+    connect(btnDebug, &QPushButton::clicked, this, [this]() {
+        emit irANivel2Debug();
+    });
+#endif
 }
 
 void SeleccionVehiculo::crearBoton(TipoVehiculo tipo, const QString &imagen,
                                    const QString &nombre, int x, int y)
 {
-    // Contenedor del botón
     QLabel *imgLabel = new QLabel(this);
     imgLabel->setGeometry(x, y, 120, 180);
     imgLabel->setAlignment(Qt::AlignCenter);
     imgLabel->setStyleSheet(
         "border: 2px solid #444444;"
         "border-radius: 8px;"
-        "background-color: rgba(30, 30, 30, 180);"  // semitransparente
+        "background-color: rgba(30, 30, 30, 180);"
         );
 
     QPixmap px(imagen);
     if (!px.isNull())
         imgLabel->setPixmap(px.scaled(90, 140, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     else
-        imgLabel->setText(nombre);  // fallback si no carga la imagen
+        imgLabel->setText(nombre);
 
-    // Botón debajo de la imagen
     QPushButton *btn = new QPushButton(nombre, this);
     btn->setGeometry(x, y + 190, 120, 36);
     btn->setStyleSheet(
@@ -95,7 +119,6 @@ void SeleccionVehiculo::crearBoton(TipoVehiculo tipo, const QString &imagen,
         "}"
         );
 
-    // Capturamos tipo por valor en el lambda
     connect(btn, &QPushButton::clicked, this, [this, tipo]() {
         emit vehiculoSeleccionado(tipo);
     });

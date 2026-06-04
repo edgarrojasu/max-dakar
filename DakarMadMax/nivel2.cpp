@@ -1,0 +1,528 @@
+#include "nivel2.h"
+#include <QPainter>
+#include <QFont>
+#include <cmath>
+
+// ┌─────────────────────────────────────────────────────────────────────────┐
+// │  MODO DEBUG — descomenta esta línea para activar cajas de prueba        │
+// └─────────────────────────────────────────────────────────────────────────┘
+// #define DEBUG_NIVEL2
+
+// ── Constantes de layout ──────────────────────────────────────────────────────
+static const int   ANCHO_VISTA     = 800;
+static const int   ALTO_VISTA      = 400;
+static const float SUELO_Y         = 300.0f;   // tope superior del suelo
+static const float ALTO_SUELO      = 100.0f;   // grosor visible del suelo
+static const float VEH_X           = 120.0f;   // X fija del vehículo
+static const float GRAVEDAD        = 0.4f;
+static const float FUERZA_SALTO    = -16.0f;
+static const int   TOTAL_AGUJEROS  = 15;       // saltos para ganar
+
+// Spritesheet motoN2: 3 cols × 1 fila = 3 frames
+static const int   SPRITE_COLS     = 3;
+static const int   SPRITE_FILAS    = 1;
+static const int   SPRITE_FRAMES   = SPRITE_COLS * SPRITE_FILAS;
+
+Nivel2::Nivel2(TipoVehiculo tipo, QWidget *parent)
+    : QWidget(parent),
+    tipoVehiculo(tipo),
+    velocidadMundo(4.0f),
+    contadorAgujero(180),       // frames hasta el primer agujero
+    intervaloAgujero(300),      // separación inicial entre agujeros
+    letraRequerida('A'),
+    esperandoTecla(false),
+    tiempoLimiteLetra(180),     // 3 s a 60 fps — se reduce con cada agujero
+    contadorLetra(0),
+    enSalto(false),
+    agujeroObjetivo(0),
+    anchoAgujeroActual(0),
+    agujerosSuperados(0),
+    frameActual(0),
+    frameSprite(0),
+    contadorFrameSprite(0),
+    estado(EstadoNivel2::Corriendo)
+{
+    setFixedSize(ANCHO_VISTA, ALTO_VISTA);
+    setFocusPolicy(Qt::StrongFocus);
+
+    // ── Escena y vista ─────────────────────────────────────────────────────
+    scene = new QGraphicsScene(0, 0, ANCHO_VISTA, ALTO_VISTA, this);
+    view  = new QGraphicsView(scene, this);
+    view->setFixedSize(ANCHO_VISTA, ALTO_VISTA);
+    view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    view->setFrameStyle(0);
+    view->setSceneRect(0, 0, ANCHO_VISTA, ALTO_VISTA);
+    view->move(0, 0);
+
+    // ── Fondo (fondoN2.png) ────────────────────────────────────────────────
+    QPixmap pxFondo(":/imagenes/fondoN2.png");
+    if (pxFondo.isNull()) {
+        pxFondo = QPixmap(ANCHO_VISTA, (int)SUELO_Y);
+        pxFondo.fill(QColor(135, 180, 220));
+    }
+    QPixmap fondoEsc = pxFondo.scaled(ANCHO_VISTA, (int)SUELO_Y,
+                                       Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    fondo1 = new QGraphicsPixmapItem(fondoEsc);
+    fondo1->setPos(0, 0);
+    fondo1->setZValue(-2);
+    scene->addItem(fondo1);
+
+    fondo2 = new QGraphicsPixmapItem(fondoEsc);
+    fondo2->setPos(ANCHO_VISTA, 0);
+    fondo2->setZValue(-2);
+    scene->addItem(fondo2);
+
+    // ── Suelo en loop (suelo2.png) ─────────────────────────────────────────
+    QPixmap pxSuelo(":/imagenes/suelo2.png");
+    if (pxSuelo.isNull()) {
+        pxSuelo = QPixmap(ANCHO_VISTA, (int)ALTO_SUELO);
+        pxSuelo.fill(QColor(160, 120, 60));
+    }
+    QPixmap sueloEsc = pxSuelo.scaled(ANCHO_VISTA, (int)ALTO_SUELO,
+                                       Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    suelo1 = new QGraphicsPixmapItem(sueloEsc);
+    suelo1->setPos(0, SUELO_Y);
+    suelo1->setZValue(1);
+    scene->addItem(suelo1);
+
+    suelo2 = new QGraphicsPixmapItem(sueloEsc);
+    suelo2->setPos(ANCHO_VISTA, SUELO_Y);
+    suelo2->setZValue(1);
+    scene->addItem(suelo2);
+
+    // ── Vehículo ──────────────────────────────────────────────────────────
+#ifdef DEBUG_NIVEL2
+    // DEBUG: caja azul sólida de 120×80 px en lugar del sprite
+    {
+        QPixmap fb(120, 80);
+        QPainter dbgP(&fb);
+        dbgP.fillRect(0, 0, 120, 80, QColor(30, 120, 220));
+        dbgP.setPen(QPen(Qt::white, 2));
+        dbgP.drawRect(1, 1, 117, 77);
+        dbgP.setPen(Qt::white);
+        dbgP.drawText(fb.rect(), Qt::AlignCenter, "MOTO");
+        dbgP.end();
+        for (int i = 0; i < SPRITE_FRAMES; i++) motoFrames.append(fb);
+    }
+#else
+    // RELEASE: spritesheet motoN2.png — 3 cols × 1 fila = 3 frames
+    QPixmap sheet(":/imagenes/motoN2.png");
+    if (!sheet.isNull()) {
+        int fw = sheet.width()  / SPRITE_COLS;
+        int fh = sheet.height() / SPRITE_FILAS;
+        for (int fila = 0; fila < SPRITE_FILAS; fila++) {
+            for (int col = 0; col < SPRITE_COLS; col++) {
+                QPixmap frame = sheet.copy(col*fw, fila*fh, fw, fh);
+
+                // Voltear horizontalmente (de izquierda a derecha)
+                frame = frame.transformed(QTransform().scale(-1, 1));
+
+                // ── TAMAÑO DE LA MOTO ─────────────────────────────────────
+                // KeepAspectRatio limitaba el tamaño al valor más pequeño.
+                // Con IgnoreAspectRatio ancho y alto son independientes.
+                //   ancho: qué tan larga se ve la moto
+                //   alto:  qué tan alta es — controla también qué tan pegada
+                //          queda al suelo (vehYBase = SUELO_Y - alto)
+                //          Si flota → súbelo. Si se hunde → bájalo.
+                frame = frame.scaled(180, 200,
+                                     Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+                // ─────────────────────────────────────────────────────────
+
+                motoFrames.append(frame);
+            }
+        }
+    } else {
+        QPixmap fb(120, 80); fb.fill(Qt::red);
+        for (int i = 0; i < SPRITE_FRAMES; i++) motoFrames.append(fb);
+    }
+#endif
+
+    vehiculo = new QGraphicsPixmapItem(motoFrames[0]);
+
+    // ── POSICIÓN VERTICAL DE LA MOTO ─────────────────────────────────────
+    // VEH_Y_OFFSET desplaza la moto hacia abajo sin cambiar su tamaño.
+    // Número positivo = baja, número negativo = sube.
+    // Ajústalo hasta que las ruedas toquen visualmente el suelo.
+    const float VEH_Y_OFFSET = 100.0f;
+    // ─────────────────────────────────────────────────────────────────────
+
+    vehYBase  = SUELO_Y - motoFrames[0].height() + VEH_Y_OFFSET;
+    vehY      = vehYBase;
+    velY      = 0.0f;
+    vehiculo->setPos(VEH_X, vehY);
+    vehiculo->setZValue(3);
+    scene->addItem(vehiculo);
+
+    // ── Meta (bandera a cuadros) ───────────────────────────────────────────
+    // Se coloca lejos a la derecha; irá acercándose con el mundo
+    QPixmap pxMeta(30, (int)ALTO_SUELO);
+    QPainter pm(&pxMeta);
+    int cell = 10;
+    for (int r = 0; r*cell < (int)ALTO_SUELO; r++)
+        for (int c = 0; c*cell < 30; c++)
+            pm.fillRect(c*cell, r*cell, cell, cell,
+                        ((r+c)%2==0) ? Qt::white : Qt::black);
+    pm.end();
+    meta = new QGraphicsPixmapItem(pxMeta);
+    // La meta aparece después de todos los agujeros: distancia amplia
+    meta->setPos(ANCHO_VISTA + TOTAL_AGUJEROS * 400.0f, SUELO_Y - 60);
+    meta->setZValue(4);
+    scene->addItem(meta);
+
+    // ── HUD: contador de agujeros ──────────────────────────────────────────
+    labelDistancia = new QLabel("Agujeros: 0 / 15", this);
+    labelDistancia->setGeometry(10, 8, 200, 28);
+    labelDistancia->setStyleSheet(
+        "color: white; font-size: 13px; font-weight: bold;"
+        "background-color: rgba(0,0,0,150); border-radius: 5px; padding: 2px 8px;");
+    labelDistancia->show();
+
+    // ── HUD: letra requerida ───────────────────────────────────────────────
+    labelLetra = new QLabel("", this);
+    labelLetra->setGeometry(330, 100, 140, 130);
+    labelLetra->setAlignment(Qt::AlignCenter);
+    labelLetra->setStyleSheet(
+        "color: #FFD700; font-size: 72px; font-weight: bold;"
+        "background-color: rgba(0,0,0,185); border: 3px solid #FFD700;"
+        "border-radius: 12px;");
+    labelLetra->hide();
+
+    // ── HUD: pista ─────────────────────────────────────────────────────────
+    labelPista = new QLabel("", this);
+    labelPista->setGeometry(220, 245, 360, 30);
+    labelPista->setAlignment(Qt::AlignCenter);
+    labelPista->setStyleSheet(
+        "color: white; font-size: 13px; font-weight: bold;"
+        "background-color: rgba(0,0,0,160); border-radius: 6px;");
+    labelPista->hide();
+
+    // ── HUD: barra de tiempo ───────────────────────────────────────────────
+    labelTiempoBar = new QLabel("", this);
+    labelTiempoBar->setGeometry(330, 240, 140, 10);
+    labelTiempoBar->setStyleSheet("background-color: #FFD700; border-radius: 4px;");
+    labelTiempoBar->hide();
+
+    // ── HUD: mensaje final ─────────────────────────────────────────────────
+    labelMensaje = new QLabel("", this);
+    labelMensaje->setGeometry(100, 130, 600, 90);
+    labelMensaje->setAlignment(Qt::AlignCenter);
+    labelMensaje->setStyleSheet(
+        "color: #FFD700; font-size: 32px; font-weight: bold;"
+        "background-color: rgba(0,0,0,210); border-radius: 14px;");
+    labelMensaje->hide();
+
+    // ── Timer ──────────────────────────────────────────────────────────────
+    timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &Nivel2::gameLoop);
+    timer->start(16);
+}
+
+Nivel2::~Nivel2() {}
+
+// ── Game loop ─────────────────────────────────────────────────────────────────
+void Nivel2::gameLoop() {
+    if (estado == EstadoNivel2::Ganando || estado == EstadoNivel2::Perdiendo) return;
+
+    frameActual++;
+
+    // ── Animar sprite de la moto ───────────────────────────────────────────
+    if (estado == EstadoNivel2::Corriendo || estado == EstadoNivel2::Saltando) {
+        contadorFrameSprite++;
+        if (contadorFrameSprite >= 5) {   // cada 5 frames cambia pose
+            contadorFrameSprite = 0;
+            frameSprite = (frameSprite + 1) % SPRITE_FRAMES;
+            vehiculo->setPixmap(motoFrames[frameSprite]);
+        }
+    }
+
+    // ── Fondo en paralaje ─────────────────────────────────────────────────
+    actualizarFondo();
+
+    // ── Suelo ─────────────────────────────────────────────────────────────
+    actualizarSuelo();
+
+    // ── Meta se acerca ────────────────────────────────────────────────────
+    meta->setX(meta->x() - velocidadMundo);
+    if (meta->x() <= VEH_X + 20) {
+        finalizarNivel(true);
+        return;
+    }
+
+    // ── Agujeros ──────────────────────────────────────────────────────────
+    actualizarAgujeros();
+
+    // ── Generar agujeros ──────────────────────────────────────────────────
+    if (estado == EstadoNivel2::Corriendo && agujerosSuperados < TOTAL_AGUJEROS) {
+        contadorAgujero--;
+        if (contadorAgujero <= 0) {
+            generarAgujero();
+            // A partir del agujero 5, el intervalo se acorta progresivamente
+            intervaloAgujero = qMax(100, intervaloAgujero - 12);
+            contadorAgujero  = intervaloAgujero;
+        }
+    }
+
+    // ── Física del vehículo ───────────────────────────────────────────────
+    if (estado == EstadoNivel2::Saltando) {
+        velY += GRAVEDAD;
+        vehY += velY;
+        vehiculo->setY(vehY);
+
+        if (vehY >= vehYBase) {
+            vehY = vehYBase;
+            velY = 0.0f;
+            vehiculo->setY(vehY);
+            estado = EstadoNivel2::Corriendo;
+            ocultarLetra();
+        }
+    } else if (estado == EstadoNivel2::Cayendo) {
+        velY += GRAVEDAD;
+        vehY += velY;
+        vehiculo->setY(vehY);
+        if (vehY > ALTO_VISTA + 60) {
+            finalizarNivel(false);
+        }
+        return;
+    }
+
+    // ── Temporizador de letra ─────────────────────────────────────────────
+    if (esperandoTecla && estado == EstadoNivel2::MostrandoLetra) {
+        contadorLetra++;
+
+        // Barra de tiempo se reduce
+        float pct = 1.0f - (float)contadorLetra / tiempoLimiteLetra;
+        int barW = (int)(140 * pct);
+        labelTiempoBar->setGeometry(330, 243, qMax(barW, 0), 8);
+
+        // Color rojo cuando queda menos del 40%
+        if (pct < 0.4f) {
+            labelLetra->setStyleSheet(
+                "color: #FF4444; font-size: 72px; font-weight: bold;"
+                "background-color: rgba(0,0,0,185); border: 3px solid #FF4444;"
+                "border-radius: 12px;");
+            labelTiempoBar->setStyleSheet("background-color: #FF4444; border-radius: 4px;");
+        }
+
+        if (contadorLetra >= tiempoLimiteLetra) {
+            // Se agotó el tiempo → cae
+            esperandoTecla = false;
+            estado = EstadoNivel2::Cayendo;
+            velY = 2.0f;
+            ocultarLetra();
+        }
+    }
+}
+
+// ── Input ─────────────────────────────────────────────────────────────────────
+void Nivel2::keyPressEvent(QKeyEvent *event) {
+    if (estado != EstadoNivel2::MostrandoLetra || !esperandoTecla) return;
+
+    int key = event->key();
+    if (key < Qt::Key_A || key > Qt::Key_Z) return;
+
+    char presionada = (char)('A' + (key - Qt::Key_A));
+
+    if (presionada == letraRequerida) {
+        esperandoTecla = false;
+        iniciarSalto();
+    } else {
+        // Tecla incorrecta → cae
+        esperandoTecla = false;
+        estado = EstadoNivel2::Cayendo;
+        velY = 2.0f;
+        ocultarLetra();
+    }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+void Nivel2::iniciarSalto() {
+    estado = EstadoNivel2::Saltando;
+    velY   = FUERZA_SALTO;
+    labelLetra->hide();
+    labelPista->hide();
+    labelTiempoBar->hide();
+}
+
+void Nivel2::mostrarLetra() {
+    letraRequerida = (char)('A' + QRandomGenerator::global()->bounded(26));
+
+    labelLetra->setText(QString(letraRequerida));
+    labelLetra->setStyleSheet(
+        "color: #FFD700; font-size: 72px; font-weight: bold;"
+        "background-color: rgba(0,0,0,185); border: 3px solid #FFD700;"
+        "border-radius: 12px;");
+    labelLetra->show();
+
+    labelPista->setText(QString("  ¡Presiona  \"%1\"  para saltar!  ").arg(letraRequerida));
+    labelPista->show();
+
+    // Barra de tiempo: el límite disminuye 8 frames por agujero superado (mín 60 ≈ 1 s)
+    tiempoLimiteLetra = qMax(60, 180 - agujerosSuperados * 8);
+    labelTiempoBar->setGeometry(330, 243, 140, 8);
+    labelTiempoBar->setStyleSheet("background-color: #FFD700; border-radius: 4px;");
+    labelTiempoBar->show();
+
+    esperandoTecla = true;
+    contadorLetra  = 0;
+    estado = EstadoNivel2::MostrandoLetra;
+}
+
+void Nivel2::ocultarLetra() {
+    labelLetra->hide();
+    labelPista->hide();
+    labelTiempoBar->hide();
+}
+
+void Nivel2::generarAgujero() {
+    // Ancho crece ligeramente con cada agujero (más difícil)
+    float anchoBase = 120.0f + agujerosSuperados * 4.0f;
+    float ancho = anchoBase + QRandomGenerator::global()->bounded(60);
+    float xInicio = ANCHO_VISTA + 10.0f;
+    int anchoI = (int)ancho;
+    int altoI  = (int)ALTO_SUELO + 10;
+
+    QGraphicsPixmapItem *imgHueco = nullptr;
+    QGraphicsRectItem   *tapaFondo = nullptr;
+
+#ifdef DEBUG_NIVEL2
+    // DEBUG: caja roja con borde blanco y etiqueta del número de agujero
+    {
+        QPixmap fb(anchoI, altoI);
+        QPainter dbgP(&fb);
+        dbgP.fillRect(0, 0, anchoI, altoI, QColor(180, 30, 30));
+        dbgP.setPen(QPen(Qt::white, 2));
+        dbgP.drawRect(1, 1, anchoI-2, altoI-2);
+        dbgP.setPen(Qt::white);
+        QFont f; f.setPixelSize(18); f.setBold(true);
+        dbgP.setFont(f);
+        dbgP.drawText(fb.rect(), Qt::AlignCenter,
+                      QString("H%1\n%2px").arg(agujerosSuperados+1).arg(anchoI));
+        dbgP.end();
+        imgHueco = new QGraphicsPixmapItem(fb);
+        imgHueco->setPos(xInicio, SUELO_Y);
+        imgHueco->setZValue(2);
+        scene->addItem(imgHueco);
+    }
+    // En debug no necesitamos tapaFondo separado (la caja ya tapa el suelo)
+    tapaFondo = new QGraphicsRectItem(xInicio, SUELO_Y, ancho, ALTO_SUELO + 10);
+    tapaFondo->setBrush(Qt::transparent);
+    tapaFondo->setPen(Qt::NoPen);
+    tapaFondo->setZValue(1);
+    scene->addItem(tapaFondo);
+#else
+    // RELEASE: imagen hueco.png
+    QPixmap pxHueco(":/imagenes/hueco.png");
+    if (!pxHueco.isNull()) {
+        QPixmap huecoEsc = pxHueco.scaled(anchoI, altoI,
+                                           Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        imgHueco = new QGraphicsPixmapItem(huecoEsc);
+        imgHueco->setPos(xInicio, SUELO_Y);
+        imgHueco->setZValue(2);
+        scene->addItem(imgHueco);
+    }
+    // Tapar el suelo debajo del hueco
+    tapaFondo = new QGraphicsRectItem(xInicio, SUELO_Y, ancho, ALTO_SUELO + 10);
+    tapaFondo->setBrush(QColor(0, 0, 0, 200));
+    tapaFondo->setPen(Qt::NoPen);
+    tapaFondo->setZValue(imgHueco ? 1 : 3);
+    scene->addItem(tapaFondo);
+#endif
+
+    Agujero ag;
+    ag.imgItem       = imgHueco;
+    ag.tapaFondo     = tapaFondo;
+    ag.xEscena       = xInicio;
+    ag.ancho         = ancho;
+    ag.letraMostrada = false;
+    ag.superado      = false;
+    agujeros.append(ag);
+}
+
+void Nivel2::actualizarSuelo() {
+    suelo1->setX(suelo1->x() - velocidadMundo);
+    suelo2->setX(suelo2->x() - velocidadMundo);
+    if (suelo1->x() + ANCHO_VISTA < 0) suelo1->setX(suelo2->x() + ANCHO_VISTA);
+    if (suelo2->x() + ANCHO_VISTA < 0) suelo2->setX(suelo1->x() + ANCHO_VISTA);
+}
+
+void Nivel2::actualizarAgujeros() {
+    QVector<Agujero> vivos;
+
+    for (Agujero &ag : agujeros) {
+        ag.xEscena -= velocidadMundo;
+        if (ag.imgItem)   ag.imgItem->setX(ag.xEscena);
+        if (ag.tapaFondo) ag.tapaFondo->setX(ag.xEscena);
+
+        float xDer = ag.xEscena + ag.ancho;
+
+        // Mostrar letra cuando el agujero está a ~220 px del vehículo
+        if (!ag.letraMostrada && !ag.superado) {
+            float dist = ag.xEscena - (VEH_X + 80);
+            if (dist < 220.0f && dist > 0.0f && estado == EstadoNivel2::Corriendo) {
+                ag.letraMostrada = true;
+                mostrarLetra();
+            }
+        }
+
+        // Detectar caída: solo si el vehículo está corriendo en suelo
+        // (nunca durante MostrandoLetra, Saltando ni Cayendo)
+        float vehXDer = VEH_X + vehiculo->boundingRect().width();
+        bool sobreAgujero = (vehXDer > ag.xEscena + 10) && (VEH_X < xDer - 10);
+
+        if (sobreAgujero && estado == EstadoNivel2::Corriendo && vehY >= vehYBase - 2.0f) {
+            estado = EstadoNivel2::Cayendo;
+            velY   = 2.0f;
+            ocultarLetra();
+        }
+
+        // Agujero superado
+        if (!ag.superado && xDer < VEH_X - 5.0f) {
+            ag.superado = true;
+            agujerosSuperados++;
+            labelDistancia->setText(QString("Agujeros: %1 / %2")
+                                        .arg(agujerosSuperados).arg(TOTAL_AGUJEROS));
+        }
+
+        // Limpiar agujeros que ya salieron completamente
+        if (ag.xEscena + ag.ancho < -60) {
+            if (ag.imgItem)   { scene->removeItem(ag.imgItem);   delete ag.imgItem; }
+            if (ag.tapaFondo) { scene->removeItem(ag.tapaFondo); delete ag.tapaFondo; }
+        } else {
+            vivos.append(ag);
+        }
+    }
+    agujeros = vivos;
+}
+
+void Nivel2::actualizarFondo() {
+    float velFondo = velocidadMundo * 0.35f;   // paralaje más lento
+    fondo1->setX(fondo1->x() - velFondo);
+    fondo2->setX(fondo2->x() - velFondo);
+    if (fondo1->x() + ANCHO_VISTA < 0) fondo1->setX(fondo2->x() + ANCHO_VISTA);
+    if (fondo2->x() + ANCHO_VISTA < 0) fondo2->setX(fondo1->x() + ANCHO_VISTA);
+}
+
+void Nivel2::finalizarNivel(bool exito) {
+    timer->stop();
+    estado = exito ? EstadoNivel2::Ganando : EstadoNivel2::Perdiendo;
+    ocultarLetra();
+
+    if (exito) {
+        labelMensaje->setText("🏁  ¡LLEGASTE A LA META!");
+        labelMensaje->setStyleSheet(
+            "color: #FFD700; font-size: 30px; font-weight: bold;"
+            "background-color: rgba(0,0,0,215); border-radius: 14px;");
+    } else {
+        labelMensaje->setText("💥  ¡Caíste en el abismo!");
+        labelMensaje->setStyleSheet(
+            "color: #FF4444; font-size: 30px; font-weight: bold;"
+            "background-color: rgba(0,0,0,215); border-radius: 14px;");
+    }
+    labelMensaje->show();
+
+    QTimer::singleShot(2500, this, [this, exito]() {
+        if (exito) emit nivelCompletado();
+        else       emit nivelFallado();
+    });
+}
