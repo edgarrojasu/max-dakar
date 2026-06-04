@@ -6,7 +6,6 @@
 #include <QGraphicsView>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsRectItem>
-#include <QGraphicsTextItem>
 #include <QTimer>
 #include <QLabel>
 #include <QKeyEvent>
@@ -14,14 +13,13 @@
 #include <QRandomGenerator>
 #include "tiposvehiculo.h"
 
-// ── Estado del nivel ──────────────────────────────────────────────────────────
 enum class EstadoNivel2 {
-    Corriendo,      // todo normal, suelo desplazándose
-    MostrandoLetra, // apareció un agujero, se muestra la letra al jugador
-    Saltando,       // el jugador presionó bien y está en el arco del salto
-    Cayendo,        // falló la tecla, el vehículo cae al agujero
-    Ganando,        // cruzó la meta
-    Perdiendo       // terminó de caer
+    Corriendo,
+    MostrandoLetra,
+    Saltando,
+    Cayendo,
+    Ganando,
+    Perdiendo
 };
 
 class Nivel2 : public QWidget {
@@ -32,8 +30,8 @@ public:
     ~Nivel2();
 
 signals:
-    void nivelCompletado();   // el jugador llegó a la meta
-    void nivelFallado();      // cayó en un agujero
+    void nivelCompletado();
+    void nivelFallado();
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
@@ -47,72 +45,71 @@ private:
     QGraphicsView  *view;
     QTimer         *timer;
 
-    // ── Vehículo ──────────────────────────────────────────────────────────
+    // ── Vehículo animado ──────────────────────────────────────────────────
     QGraphicsPixmapItem *vehiculo;
-    float vehY;          // posición Y actual del vehículo
-    float vehYBase;      // Y de reposo sobre el suelo
-    float velY;          // velocidad vertical durante salto/caída
+    QVector<QPixmap>     motoFrames;
+    int  frameSprite;
+    int  contadorFrameSprite;
+    float vehY;
+    float vehYBase;
+    float velY;
     TipoVehiculo tipoVehiculo;
 
-    // ── Suelo desplazable ─────────────────────────────────────────────────
-    // Dos segmentos de suelo que hacen loop
-    QGraphicsRectItem *suelo1;
-    QGraphicsRectItem *suelo2;
-    float velocidadMundo;   // píxeles/frame que se desplaza el escenario
+    // ── Fondo y suelo desplazables ────────────────────────────────────────
+    QGraphicsPixmapItem *fondo1;
+    QGraphicsPixmapItem *fondo2;
+    QGraphicsPixmapItem *suelo1;
+    QGraphicsPixmapItem *suelo2;
+    float velocidadMundo;
 
     // ── Agujeros ──────────────────────────────────────────────────────────
     struct Agujero {
-        QGraphicsRectItem *rect;  // rectángulo negro del hueco
-        float xEscena;            // posición X en la escena (se mueve)
+        QGraphicsPixmapItem *imgItem;    // imagen hueco.png (puede ser null)
+        QGraphicsRectItem   *tapaFondo;  // rectángulo negro de respaldo
+        float xEscena;
         float ancho;
-        bool  letraMostrada;      // ¿ya se mostró la letra para este agujero?
-        bool  superado;           // ¿ya lo cruzó con éxito?
+        bool  letraMostrada;
+        bool  superado;
     };
     QVector<Agujero> agujeros;
-
-    int contadorAgujero;      // frames hasta generar el próximo agujero
-    int intervaloAgujero;     // separación entre agujeros (decrece con el tiempo)
+    int contadorAgujero;
+    int intervaloAgujero;
+    int agujerosSuperados;
 
     // ── Mecánica de letra ─────────────────────────────────────────────────
-    char       letraRequerida;    // 'A'..'Z'
-    QLabel    *labelLetra;        // widget que muestra la letra al jugador
-    QLabel    *labelPista;        // "¡Presiona X para saltar!"
-    bool       esperandoTecla;    // true mientras se muestra la letra
-    int        tiempoLimiteLetra; // frames que tiene el jugador para responder
-    int        contadorLetra;     // frames transcurridos esperando
+    char   letraRequerida;
+    QLabel *labelLetra;
+    QLabel *labelPista;
+    QLabel *labelTiempoBar;   // barra visual de tiempo restante
+    bool   esperandoTecla;
+    int    tiempoLimiteLetra;
+    int    contadorLetra;
 
     // ── Salto ─────────────────────────────────────────────────────────────
     bool  enSalto;
-    float agujeroObjetivo;   // X final del agujero que está cruzando
+    float agujeroObjetivo;
     float anchoAgujeroActual;
 
     // ── Meta ──────────────────────────────────────────────────────────────
     QGraphicsPixmapItem *meta;
-    float xMeta;            // posición X de la meta en escena
-    int   distanciaTotal;   // frames de recorrido hasta la meta
-    int   frameActual;
 
     // ── HUD ───────────────────────────────────────────────────────────────
-    QLabel *labelDistancia;  // barra de progreso textual
-    QLabel *labelMensaje;    // "¡GANASTE!" / "Caíste..."
+    QLabel *labelDistancia;
+    QLabel *labelMensaje;
 
     // ── Estado ────────────────────────────────────────────────────────────
     EstadoNivel2 estado;
-
-    // ── Fondo desplazable ─────────────────────────────────────────────────
-    QGraphicsPixmapItem *fondo1;
-    QGraphicsPixmapItem *fondo2;
+    int frameActual;
 
     // ── Helpers ───────────────────────────────────────────────────────────
     void iniciarSalto();
-    void mostrarLetra(float xAgujero, float anchoAgujero);
+    void mostrarLetra();
     void ocultarLetra();
     void generarAgujero();
     void actualizarSuelo();
     void actualizarAgujeros();
-    void verificarColisiones();
     void actualizarFondo();
     void finalizarNivel(bool exito);
 };
 
-#endif // NIVEL2_H
+#endif
