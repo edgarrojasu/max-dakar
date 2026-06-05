@@ -10,10 +10,13 @@ Carretera::Carretera(float x, float y, float ancho, float alto)
     if (h <= 0) h = 10;
 
     QPixmap px(":/imagenes/carretera.png");
-    if (!px.isNull()) {
+    if (!px.isNull())
+    {
         setPixmap(px.scaled(w, h,
                             Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
-    } else {
+    }
+    else
+    {
         QPixmap fallback(w, h);
         fallback.fill(QColor(60, 60, 60));
         setPixmap(fallback);
@@ -21,6 +24,7 @@ Carretera::Carretera(float x, float y, float ancho, float alto)
     velocidadY = 100.0f;
 }
 
-void Carretera::actualizar(float velocidadMundo) {
+void Carretera::actualizar(float velocidadMundo)
+{
     setY(y() + velocidadMundo);
 }

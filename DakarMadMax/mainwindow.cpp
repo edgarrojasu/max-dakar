@@ -3,9 +3,6 @@
 #include <QMessageBox>
 #include <QUrl>
 
-// Debe coincidir con el define en nivel2.cpp y seleccionvehiculo.cpp
-#define DEBUG_NIVEL2
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), jugador(nullptr), rival(nullptr),
     escenario(nullptr), timer(nullptr),
@@ -19,11 +16,9 @@ MainWindow::MainWindow(QWidget *parent)
     stack = new QStackedWidget(this);
     setCentralWidget(stack);
 
-    // índice 0 — selección de vehículo
     pantallaSeleccion = new SeleccionVehiculo();
     stack->addWidget(pantallaSeleccion);
 
-    // índice 1 — nivel 1 (vista cenital)
     view = new QGraphicsView();
     view->setFixedSize(800, 600);
     view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -34,19 +29,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(pantallaSeleccion, &SeleccionVehiculo::vehiculoSeleccionado,
             this, &MainWindow::iniciarJuego);
 
-#ifdef DEBUG_NIVEL2
-    // Botón debug: salta directo al nivel 2 con Moto por defecto
-    connect(pantallaSeleccion, &SeleccionVehiculo::irANivel2Debug, this, [this]() {
-        tipoElegido = TipoVehiculo::Moto;
-        iniciarNivel2();
-    });
-#endif
-
     stack->setCurrentIndex(0);
 }
 
-// ── Nivel 1 ───────────────────────────────────────────────────────────────────
-void MainWindow::iniciarJuego(TipoVehiculo tipo) {
+void MainWindow::iniciarJuego(TipoVehiculo tipo)
+{
     tipoElegido = tipo;
 
     scene = new QGraphicsScene(0, 0, 800, 600, this);
@@ -81,12 +68,11 @@ void MainWindow::iniciarJuego(TipoVehiculo tipo) {
     juegoTerminado = false;
     lineaMeta      = nullptr;
 
-    // ── Música nivel 1 ────────────────────────────────────────────────────
     musicaNivel1 = new QMediaPlayer(this);
     audioNivel1  = new QAudioOutput(this);
     musicaNivel1->setAudioOutput(audioNivel1);
     musicaNivel1->setSource(QUrl("qrc:/sonido/sonido/nivel 1.m4a"));
-    audioNivel1->setVolume(0.6f);   // 0.0 silencio — 1.0 máximo
+    audioNivel1->setVolume(0.6f);
     musicaNivel1->setLoops(QMediaPlayer::Infinite);
     musicaNivel1->play();
 
@@ -100,7 +86,8 @@ void MainWindow::iniciarJuego(TipoVehiculo tipo) {
     jugador->setFocus();
 }
 
-void MainWindow::gameLoop() {
+void MainWindow::gameLoop()
+{
     if (juegoTerminado) return;
 
     escenario->desplazar();
@@ -114,7 +101,8 @@ void MainWindow::gameLoop() {
                              .arg(minutos)
                              .arg(segundos, 2, 10, QChar('0')));
 
-    if (tiempoRestante == 0 && lineaMeta == nullptr) {
+    if (tiempoRestante == 0 && lineaMeta == nullptr)
+    {
         lineaMeta = new QGraphicsRectItem(0, 50, 600, 8);
         lineaMeta->setBrush(QBrush(Qt::white));
         lineaMeta->setPen(Qt::NoPen);
@@ -122,7 +110,8 @@ void MainWindow::gameLoop() {
         scene->addItem(lineaMeta);
     }
 
-    if (lineaMeta != nullptr) {
+    if (lineaMeta != nullptr)
+    {
         lineaMeta->setY(lineaMeta->y() + 10.0f);
 
         QRectF rMeta    = lineaMeta->mapToScene(lineaMeta->boundingRect()).boundingRect();
@@ -135,27 +124,29 @@ void MainWindow::gameLoop() {
         else if (rRival.intersects(rMeta))
             ganador = "rival";
 
-        if (!ganador.isEmpty()) {
+        if (!ganador.isEmpty())
+        {
             juegoTerminado = true;
             timer->stop();
 
-            if (ganador == "jugador") {
-                // Mostrar mensaje y pasar al nivel 2
+            if (ganador == "jugador")
+            {
                 QMessageBox::information(this, "Nivel 1 completado",
                     "¡GANASTE la carrera!\n\nAhora viene el Nivel 2: ¡vista lateral!");
                 iniciarNivel2();
-            } else {
+            }
+            else
+            {
                 QMessageBox::information(this, "Fin de la carrera",
                     "El rival ganó. ¡Vuelve a intentarlo!");
-                // Volver a la selección
                 stack->setCurrentIndex(0);
             }
         }
     }
 
-    // ── Terrenos ──────────────────────────────────────────────────────────
     contadorFrames++;
-    if (contadorFrames >= 200) {
+    if (contadorFrames >= 200)
+    {
         contadorFrames = 0;
         int x     = QRandomGenerator::global()->bounded(20, 400);
         int ancho = QRandomGenerator::global()->bounded(100, 140);
@@ -166,7 +157,8 @@ void MainWindow::gameLoop() {
     }
 
     contadorFango++;
-    if (contadorFango >= 200) {
+    if (contadorFango >= 200)
+    {
         contadorFango = 0;
         int x     = QRandomGenerator::global()->bounded(20, 400);
         int ancho = QRandomGenerator::global()->bounded(100, 200);
@@ -177,16 +169,20 @@ void MainWindow::gameLoop() {
     }
 
     contadorLlantas++;
-    if (contadorLlantas >= 150) {
+    if (contadorLlantas >= 150)
+    {
         contadorLlantas = 0;
         float x   = (float)QRandomGenerator::global()->bounded(50, 500);
         float vel = 2.0f + QRandomGenerator::global()->bounded(0, 20) * 0.1f;
         Llanta *l = new Llanta(x, vel);
         QRectF rJugador = jugador->mapToScene(jugador->boundingRect()).boundingRect();
-        if (!rJugador.intersects(QRectF(x, -60, 60, 60))) {
+        if (!rJugador.intersects(QRectF(x, -60, 60, 60)))
+        {
             scene->addItem(l);
             terrenos.push_back(l);
-        } else {
+        }
+        else
+        {
             delete l;
         }
     }
@@ -197,11 +193,13 @@ void MainWindow::gameLoop() {
     bool sobreTerreno = false;
     bool sobreFango   = false;
 
-    for (int i = 0; i < (int)terrenos.size(); i++) {
+    for (int i = 0; i < (int)terrenos.size(); i++)
+    {
         if (!terrenos[i]->scene()) continue;
         QRectF rJugador = jugador->mapToScene(jugador->boundingRect()).boundingRect();
         QRectF rTerreno = terrenos[i]->mapToScene(terrenos[i]->boundingRect()).boundingRect();
-        if (rJugador.intersects(rTerreno)) {
+        if (rJugador.intersects(rTerreno))
+        {
             jugador->setMultiplicador(terrenos[i]->getMultiplicador());
             sobreTerreno = true;
             if (dynamic_cast<Fango*>(terrenos[i]))
@@ -214,51 +212,53 @@ void MainWindow::gameLoop() {
         jugador->setMultiplicador(0.0f);
 
     std::vector<Terreno*> sobrevivientes;
-    for (int i = 0; i < (int)terrenos.size(); i++) {
-        if (terrenos[i]->fueraDePantalla()) {
+    for (int i = 0; i < (int)terrenos.size(); i++)
+    {
+        if (terrenos[i]->fueraDePantalla())
+        {
             scene->removeItem(terrenos[i]);
             delete terrenos[i];
-        } else {
+        }
+        else
+        {
             sobrevivientes.push_back(terrenos[i]);
         }
     }
     terrenos = sobrevivientes;
 }
 
-// ── Nivel 2 ───────────────────────────────────────────────────────────────────
-void MainWindow::iniciarNivel2() {
-    // Detener música del nivel 1
-    if (musicaNivel1) {
+void MainWindow::iniciarNivel2()
+{
+    if (musicaNivel1)
+    {
         musicaNivel1->stop();
         musicaNivel1->deleteLater();
         musicaNivel1 = nullptr;
     }
 
-    // Crear el widget del nivel 2 con el vehículo que eligió el jugador
     pantallaNivel2 = new Nivel2(tipoElegido);
 
-    // Redimensionar la ventana para acomodar la vista lateral (800x400)
     setFixedSize(800, 400);
 
-    stack->addWidget(pantallaNivel2);          // índice 2
+    stack->addWidget(pantallaNivel2);
     stack->setCurrentWidget(pantallaNivel2);
 
-    // Pasar el foco para que reciba eventos de teclado
     pantallaNivel2->setFocus();
 
-    // Conectar señales del nivel 2
-    connect(pantallaNivel2, &Nivel2::nivelCompletado, this, [this]() {
+    connect(pantallaNivel2, &Nivel2::nivelCompletado, this, [this]()
+    {
         QMessageBox::information(this, "¡Juego completado!",
             "🏁 ¡Completaste los dos niveles!\n\n¡Eres el campeón del Dakar Mad Max!");
         setFixedSize(800, 600);
-        stack->setCurrentIndex(0);   // volver al inicio
+        stack->setCurrentIndex(0);
     });
 
-    connect(pantallaNivel2, &Nivel2::nivelFallado, this, [this]() {
+    connect(pantallaNivel2, &Nivel2::nivelFallado, this, [this]()
+    {
         QMessageBox::information(this, "Nivel 2",
             "Caíste en un agujero... ¡Inténtalo de nuevo!");
         setFixedSize(800, 600);
-        stack->setCurrentIndex(0);   // volver al inicio
+        stack->setCurrentIndex(0);
     });
 }
 

@@ -4,7 +4,6 @@
 Escenario::Escenario(QGraphicsScene *scene)
     : scene(scene), velocidadFondo(10.0f)
 {
-    // ── FONDO DESPLAZABLE ─────────────────────────────────────────
     QPixmap pxFondo1(":/imagenes/fondo1.png");
     QPixmap pxFondo2(":/imagenes/fonogem.png");
 
@@ -22,7 +21,6 @@ Escenario::Escenario(QGraphicsScene *scene)
     fondo2->setZValue(-1);
     scene->addItem(fondo2);
 
-    // ── BORDES LATERALES DESPLAZABLES ────────────────────────────
     QPixmap pxIzq(":/imagenes/fondoIzq.png");
     QPixmap pxDer(":/imagenes/fondoderchat.png");
 
@@ -55,8 +53,8 @@ Escenario::Escenario(QGraphicsScene *scene)
     scene->addItem(bordeDer2);
 }
 
-void Escenario::desplazar() {
-    // Mover todo
+void Escenario::desplazar()
+{
     fondo1->setY(fondo1->y() + velocidadFondo);
     fondo2->setY(fondo2->y() + velocidadFondo);
     bordeIzq1->setY(bordeIzq1->y() + velocidadFondo);
@@ -64,11 +62,9 @@ void Escenario::desplazar() {
     bordeDer1->setY(bordeDer1->y() + velocidadFondo);
     bordeDer2->setY(bordeDer2->y() + velocidadFondo);
 
-    // Loop del fondo
     if (fondo1->y() >= 700) fondo1->setY(fondo2->y() - 700);
     if (fondo2->y() >= 700) fondo2->setY(fondo1->y() - 700);
 
-    // Loop de los bordes
     if (bordeIzq1->y() >= 700) bordeIzq1->setY(bordeIzq2->y() - 700);
     if (bordeIzq2->y() >= 700) bordeIzq2->setY(bordeIzq1->y() - 700);
     if (bordeDer1->y() >= 700) bordeDer1->setY(bordeDer2->y() - 700);

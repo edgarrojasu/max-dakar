@@ -4,11 +4,6 @@
 #include <QPixmap>
 #include <QFont>
 
-// ┌─────────────────────────────────────────────────────────────────────────┐
-// │  MODO DEBUG — comenta esta línea para volver al juego normal            │
-// └─────────────────────────────────────────────────────────────────────────┘
-#define DEBUG_NIVEL2
-
 SeleccionVehiculo::SeleccionVehiculo(QWidget *parent)
     : QWidget(parent)
 {
@@ -60,27 +55,6 @@ SeleccionVehiculo::SeleccionVehiculo(QWidget *parent)
     descCamion->setGeometry(570, 430, 120, 100);
     descCamion->setAlignment(Qt::AlignCenter);
     descCamion->setStyleSheet("color: #cccccc; font-size: 11px; background-color: rgba(0,0,0,150);");
-
-#ifdef DEBUG_NIVEL2
-    // ── BOTÓN DEBUG: ir directo al nivel 2 ───────────────────────────────
-    QPushButton *btnDebug = new QPushButton("⚙  DEBUG → Nivel 2", this);
-    btnDebug->setGeometry(290, 545, 220, 34);
-    btnDebug->setStyleSheet(
-        "QPushButton {"
-        "  background-color: #333333;"
-        "  color: #00FF88;"
-        "  font-weight: bold;"
-        "  border: 1px solid #00FF88;"
-        "  border-radius: 6px;"
-        "  font-size: 12px;"
-        "}"
-        "QPushButton:hover { background-color: #444444; }"
-        "QPushButton:pressed { background-color: #222222; }"
-    );
-    connect(btnDebug, &QPushButton::clicked, this, [this]() {
-        emit irANivel2Debug();
-    });
-#endif
 }
 
 void SeleccionVehiculo::crearBoton(TipoVehiculo tipo, const QString &imagen,

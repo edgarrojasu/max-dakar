@@ -14,7 +14,6 @@ public:
 
 signals:
     void vehiculoSeleccionado(TipoVehiculo tipo);
-    void irANivel2Debug();   // solo activa cuando DEBUG_NIVEL2 está definido
 
 private:
     void crearBoton(TipoVehiculo tipo, const QString &imagen,

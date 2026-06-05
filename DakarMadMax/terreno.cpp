@@ -7,6 +7,7 @@ Terreno::Terreno(float x, float y)
     setZValue(0);
 }
 
-bool Terreno::fueraDePantalla() const {
+bool Terreno::fueraDePantalla() const
+{
     return y() > 800;
 }

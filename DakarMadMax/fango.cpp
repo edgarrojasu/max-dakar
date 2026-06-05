@@ -9,10 +9,13 @@ Fango::Fango(float x, float y, float ancho, float alto)
     if (h <= 0) h = 10;
 
     QPixmap px(":/imagenes/fango.png");
-    if (!px.isNull()) {
+    if (!px.isNull())
+    {
         setPixmap(px.scaled(w, h,
                             Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
-    } else {
+    }
+    else
+    {
         QPixmap fallback(w, h);
         fallback.fill(QColor(101, 67, 33));
         setPixmap(fallback);
@@ -20,6 +23,7 @@ Fango::Fango(float x, float y, float ancho, float alto)
     velocidadY = -0.2f;
 }
 
-void Fango::actualizar(float velocidadMundo) {
+void Fango::actualizar(float velocidadMundo)
+{
     setY(y() + velocidadMundo);
 }
