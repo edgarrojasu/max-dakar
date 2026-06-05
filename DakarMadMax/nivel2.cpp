@@ -175,7 +175,7 @@ Nivel2::Nivel2(TipoVehiculo tipo, QWidget *parent)
     // Cada agujero tarda ~intervaloAgujero frames en generarse (empieza en 300,
     // baja hasta 100). Promedio ~200 frames × 15 agujeros × velocidadMundo(4) = 12000 px
     // Le sumamos margen extra para que no llegue antes de tiempo.
-    meta->setPos(ANCHO_VISTA + 25000.0f, SUELO_Y - 60);
+    meta->setPos(ANCHO_VISTA + 23000.0f, SUELO_Y - 60);
     meta->setZValue(4);
     scene->addItem(meta);
 
@@ -422,7 +422,7 @@ void Nivel2::generarAgujero() {
     tapaFondo->setZValue(1);
     scene->addItem(tapaFondo);
 #else
-    // RELEASE: imagen hueco.png
+    // RELEASE: imagen hueco.png — cubre el suelo completamente, no se necesita tapaFondo
     QPixmap pxHueco(":/imagenes/hueco.png");
     if (!pxHueco.isNull()) {
         QPixmap huecoEsc = pxHueco.scaled(anchoI, altoI,
@@ -432,12 +432,7 @@ void Nivel2::generarAgujero() {
         imgHueco->setZValue(2);
         scene->addItem(imgHueco);
     }
-    // Tapar el suelo debajo del hueco
-    tapaFondo = new QGraphicsRectItem(xInicio, SUELO_Y, ancho, ALTO_SUELO + 10);
-    tapaFondo->setBrush(QColor(0, 0, 0, 200));
-    tapaFondo->setPen(Qt::NoPen);
-    tapaFondo->setZValue(imgHueco ? 1 : 3);
-    scene->addItem(tapaFondo);
+    // tapaFondo = nullptr — no hace falta, hueco.png ya tapa el suelo
 #endif
 
     Agujero ag;
