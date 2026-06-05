@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include <QDebug>
 #include <QMessageBox>
+#include <QUrl>
 
 // Debe coincidir con el define en nivel2.cpp y seleccionvehiculo.cpp
 #define DEBUG_NIVEL2
@@ -9,7 +10,8 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), jugador(nullptr), rival(nullptr),
     escenario(nullptr), timer(nullptr),
     lineaMeta(nullptr), tiempoRestante(7200), juegoTerminado(false),
-    tipoElegido(TipoVehiculo::CarroDakar), pantallaNivel2(nullptr)
+    tipoElegido(TipoVehiculo::CarroDakar), pantallaNivel2(nullptr),
+    musicaNivel1(nullptr), audioNivel1(nullptr)
 {
     setFixedSize(800, 600);
     setWindowTitle("Dakar Mad Max");
@@ -78,6 +80,15 @@ void MainWindow::iniciarJuego(TipoVehiculo tipo) {
     tiempoRestante = 7200;
     juegoTerminado = false;
     lineaMeta      = nullptr;
+
+    // ── Música nivel 1 ────────────────────────────────────────────────────
+    musicaNivel1 = new QMediaPlayer(this);
+    audioNivel1  = new QAudioOutput(this);
+    musicaNivel1->setAudioOutput(audioNivel1);
+    musicaNivel1->setSource(QUrl("qrc:/sonido/sonido/nivel 1.m4a"));
+    audioNivel1->setVolume(0.6f);   // 0.0 silencio — 1.0 máximo
+    musicaNivel1->setLoops(QMediaPlayer::Infinite);
+    musicaNivel1->play();
 
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &MainWindow::gameLoop);
@@ -216,6 +227,13 @@ void MainWindow::gameLoop() {
 
 // ── Nivel 2 ───────────────────────────────────────────────────────────────────
 void MainWindow::iniciarNivel2() {
+    // Detener música del nivel 1
+    if (musicaNivel1) {
+        musicaNivel1->stop();
+        musicaNivel1->deleteLater();
+        musicaNivel1 = nullptr;
+    }
+
     // Crear el widget del nivel 2 con el vehículo que eligió el jugador
     pantallaNivel2 = new Nivel2(tipoElegido);
 

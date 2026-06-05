@@ -10,6 +10,8 @@
 #include <QLabel>
 #include <vector>
 #include <QRandomGenerator>
+#include <QMediaPlayer>
+#include <QAudioOutput>
 #include "terreno.h"
 #include "vehiculo.h"
 #include "escenario.h"
@@ -30,13 +32,13 @@ public:
 private slots:
     void iniciarJuego(TipoVehiculo tipo);
     void gameLoop();
-    void iniciarNivel2();   // se llama cuando el jugador gana el nivel 1
+    void iniciarNivel2();
 
 private:
     // ── Navegación ────────────────────────────────────────────────────────
     QStackedWidget    *stack;
     SeleccionVehiculo *pantallaSeleccion;
-    Nivel2            *pantallaNivel2;     // nivel 2 (vista lateral)
+    Nivel2            *pantallaNivel2;
 
     // ── Nivel 1 ───────────────────────────────────────────────────────────
     QGraphicsScene    *scene;
@@ -51,12 +53,16 @@ private:
     int                tiempoRestante;
     bool               juegoTerminado;
 
-    TipoVehiculo       tipoElegido;   // guardamos el tipo para pasarlo al nivel 2
+    TipoVehiculo       tipoElegido;
 
     std::vector<Terreno*> terrenos;
     int contadorFrames  = 0;
     int contadorFango   = 0;
     int contadorLlantas = 0;
+
+    // ── Audio ─────────────────────────────────────────────────────────────
+    QMediaPlayer  *musicaNivel1;
+    QAudioOutput  *audioNivel1;
 };
 
 #endif

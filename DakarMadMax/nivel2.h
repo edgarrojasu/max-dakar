@@ -12,6 +12,8 @@
 #include <QVector>
 #include <QRandomGenerator>
 #include "tiposvehiculo.h"
+#include <QMediaPlayer>
+#include <QAudioOutput>
 
 enum class EstadoNivel2 {
     Corriendo,
@@ -110,6 +112,12 @@ private:
     void actualizarAgujeros(bool mover);
     void actualizarFondo();
     void finalizarNivel(bool exito);
+
+    // ── Audio ──────────────────────────────────────────────────────────────
+    QMediaPlayer  *musicaNivel2;
+    QAudioOutput  *audioNivel2;
+    QMediaPlayer  *sfxSalto;
+    QAudioOutput  *audioSfxSalto;
 };
 
 #endif

@@ -16,4 +16,9 @@
         <file>imagenes/motoN2.png</file>
         <file>imagenes/suelo2.png</file>
     </qresource>
+    <qresource prefix="/sonido">
+        <file>sonido/nivel 1.m4a</file>
+        <file>sonido/nivel2.m4a</file>
+        <file>sonido/wheelie_1.m4a</file>
+    </qresource>
 </RCC>

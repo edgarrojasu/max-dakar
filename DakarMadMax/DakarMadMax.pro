@@ -1,8 +1,4 @@
-QT       += core gui
-
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
-
-QT += core gui widgets
+QT += core gui widgets multimedia
 
 CONFIG += c++17
 
@@ -33,15 +29,9 @@ HEADERS += \
 FORMS += \
     mainwindow.ui
 
-# Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
-
-DISTFILES += \
-    ../../../../../imagenes/motoCenital.png \
-    ../motoCenital.png \
-    imagenes/1000251949.png
 
 RESOURCES += \
     recursos.qrc

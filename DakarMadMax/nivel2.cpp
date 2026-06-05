@@ -1,6 +1,7 @@
 #include "nivel2.h"
 #include <QPainter>
 #include <QFont>
+#include <QUrl>
 #include <cmath>
 
 // ┌─────────────────────────────────────────────────────────────────────────┐
@@ -40,7 +41,9 @@ Nivel2::Nivel2(TipoVehiculo tipo, QWidget *parent)
     frameActual(0),
     frameSprite(0),
     contadorFrameSprite(0),
-    estado(EstadoNivel2::Corriendo)
+    estado(EstadoNivel2::Corriendo),
+    musicaNivel2(nullptr), audioNivel2(nullptr),
+    sfxSalto(nullptr), audioSfxSalto(nullptr)
 {
     setFixedSize(ANCHO_VISTA, ALTO_VISTA);
     setFocusPolicy(Qt::StrongFocus);
@@ -175,7 +178,7 @@ Nivel2::Nivel2(TipoVehiculo tipo, QWidget *parent)
     // Cada agujero tarda ~intervaloAgujero frames en generarse (empieza en 300,
     // baja hasta 100). Promedio ~200 frames × 15 agujeros × velocidadMundo(4) = 12000 px
     // Le sumamos margen extra para que no llegue antes de tiempo.
-    meta->setPos(ANCHO_VISTA + 23000.0f, SUELO_Y - 60);
+    meta->setPos(ANCHO_VISTA + 25000.0f, SUELO_Y - 60);
     meta->setZValue(4);
     scene->addItem(meta);
 
@@ -225,6 +228,22 @@ Nivel2::Nivel2(TipoVehiculo tipo, QWidget *parent)
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &Nivel2::gameLoop);
     timer->start(16);
+
+    // ── Música de fondo nivel 2 ────────────────────────────────────────────
+    musicaNivel2 = new QMediaPlayer(this);
+    audioNivel2  = new QAudioOutput(this);
+    musicaNivel2->setAudioOutput(audioNivel2);
+    musicaNivel2->setSource(QUrl("qrc:/sonido/sonido/nivel2.m4a"));
+    audioNivel2->setVolume(0.6f);   // 0.0 silencio — 1.0 máximo
+    musicaNivel2->setLoops(QMediaPlayer::Infinite);
+    musicaNivel2->play();
+
+    // ── SFX: sonido al saltar correctamente ───────────────────────────────
+    sfxSalto     = new QMediaPlayer(this);
+    audioSfxSalto = new QAudioOutput(this);
+    sfxSalto->setAudioOutput(audioSfxSalto);
+    sfxSalto->setSource(QUrl("qrc:/sonido/sonido/wheelie_1.m4a"));
+    audioSfxSalto->setVolume(0.8f);
 }
 
 Nivel2::~Nivel2() {}
@@ -350,6 +369,12 @@ void Nivel2::iniciarSalto() {
     labelLetra->hide();
     labelPista->hide();
     labelTiempoBar->hide();
+
+    // SFX tecla correcta
+    if (sfxSalto) {
+        sfxSalto->stop();
+        sfxSalto->play();
+    }
 }
 
 void Nivel2::mostrarLetra() {
@@ -516,6 +541,7 @@ void Nivel2::actualizarFondo() {
 
 void Nivel2::finalizarNivel(bool exito) {
     timer->stop();
+    if (musicaNivel2) musicaNivel2->stop();
     estado = exito ? EstadoNivel2::Ganando : EstadoNivel2::Perdiendo;
     ocultarLetra();
 
