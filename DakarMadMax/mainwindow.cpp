@@ -180,10 +180,13 @@ void MainWindow::gameLoop()
         float vel = 2.0f + QRandomGenerator::global()->bounded(0, 20) * 0.1f;
         Llanta *l = new Llanta(x, vel);
         QRectF rJugador = jugador->mapToScene(jugador->boundingRect()).boundingRect();
-        if (!rJugador.intersects(QRectF(x, -60, 60, 60))) {
+        if (!rJugador.intersects(QRectF(x, -60, 60, 60)))
+        {
             scene->addItem(l);
             terrenos.push_back(l);
-        } else {
+        }
+        else
+        {
             delete l;
         }
     }
@@ -194,11 +197,13 @@ void MainWindow::gameLoop()
     bool sobreTerreno = false;
     bool sobreFango   = false;
 
-    for (int i = 0; i < (int)terrenos.size(); i++) {
+    for (int i = 0; i < (int)terrenos.size(); i++)
+    {
         if (!terrenos[i]->scene()) continue;
         QRectF rJugador = jugador->mapToScene(jugador->boundingRect()).boundingRect();
         QRectF rTerreno = terrenos[i]->mapToScene(terrenos[i]->boundingRect()).boundingRect();
-        if (rJugador.intersects(rTerreno)) {
+        if (rJugador.intersects(rTerreno))
+        {
             jugador->setMultiplicador(terrenos[i]->getMultiplicador());
             sobreTerreno = true;
             if (dynamic_cast<Fango*>(terrenos[i]))
@@ -211,11 +216,15 @@ void MainWindow::gameLoop()
         jugador->setMultiplicador(0.0f);
 
     std::vector<Terreno*> sobrevivientes;
-    for (int i = 0; i < (int)terrenos.size(); i++) {
-        if (terrenos[i]->fueraDePantalla()) {
+    for (int i = 0; i < (int)terrenos.size(); i++)
+    {
+        if (terrenos[i]->fueraDePantalla())
+        {
             scene->removeItem(terrenos[i]);
             delete terrenos[i];
-        } else {
+        }
+        else
+        {
             sobrevivientes.push_back(terrenos[i]);
         }
     }
@@ -223,39 +232,41 @@ void MainWindow::gameLoop()
 }
 
 // ── Nivel 2 ───────────────────────────────────────────────────────────────────
-void MainWindow::iniciarNivel2() {
+void MainWindow::iniciarNivel2()
+{
     // Detener música del nivel 1
-    if (musicaNivel1) {
+    if (musicaNivel1)
+    {
         musicaNivel1->stop();
         musicaNivel1->deleteLater();
         musicaNivel1 = nullptr;
     }
 
-    // Crear el widget del nivel 2 con el vehículo que eligió el jugador
     pantallaNivel2 = new Nivel2(tipoElegido);
 
-    // Redimensionar la ventana para acomodar la vista lateral (800x400)
+    // Redimensionar la ventana para acomodar la vista lateral
     setFixedSize(800, 400);
 
-    stack->addWidget(pantallaNivel2);          // índice 2
+    stack->addWidget(pantallaNivel2);
     stack->setCurrentWidget(pantallaNivel2);
 
     // Pasar el foco para que reciba eventos de teclado
     pantallaNivel2->setFocus();
 
-    // Conectar señales del nivel 2
-    connect(pantallaNivel2, &Nivel2::nivelCompletado, this, [this]() {
+    connect(pantallaNivel2, &Nivel2::nivelCompletado, this, [this]()
+            {
         QMessageBox::information(this, "¡Juego completado!",
             "🏁 ¡Completaste los dos niveles!\n\n¡Eres el campeón del Dakar Mad Max!");
         setFixedSize(800, 600);
-        stack->setCurrentIndex(0);   // volver al inicio
+        stack->setCurrentIndex(0);
     });
 
-    connect(pantallaNivel2, &Nivel2::nivelFallado, this, [this]() {
+    connect(pantallaNivel2, &Nivel2::nivelFallado, this, [this]()
+            {
         QMessageBox::information(this, "Nivel 2",
             "Caíste en un agujero... ¡Inténtalo de nuevo!");
         setFixedSize(800, 600);
-        stack->setCurrentIndex(0);   // volver al inicio
+        stack->setCurrentIndex(0);
     });
 }
 

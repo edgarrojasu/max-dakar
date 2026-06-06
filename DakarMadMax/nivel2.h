@@ -114,11 +114,11 @@ private:
     void finalizarNivel(bool exito);
 
     // ── Helpers de gameLoop() ─────────────────────────────────────────────
-    void animarSprite();           // avanza el frame del spritesheet de la moto
-    void avanzarMeta();            // mueve la meta y comprueba si llegó
-    void gestionarAgujeros();      // genera nuevos agujeros periódicamente
-    void actualizarFisicaVehiculo(); // salto, caída y aterrizaje
-    void actualizarTemporizadorLetra(); // barra de tiempo y timeout de tecla
+    void animarSprite();
+    void avanzarMeta();
+    void gestionarAgujeros();
+    void actualizarFisicaVehiculo();
+    void actualizarTemporizadorLetra();
 
     // ── Audio ─────────────────────────────────────────────────────────────
     QMediaPlayer  *musicaNivel2;
