@@ -14,6 +14,7 @@
 #include <QAudioOutput>
 #include "terreno.h"
 #include "vehiculo.h"
+#include "vehiculoia.h"
 #include "escenario.h"
 #include "seleccionvehiculo.h"
 #include "tiposvehiculo.h"
@@ -45,7 +46,7 @@ private:
     QGraphicsView     *view;
     QTimer            *timer;
     Vehiculo          *jugador;
-    Vehiculo          *rival;
+    VehiculoIA        *rival;
     Escenario         *escenario;
 
     QGraphicsRectItem *lineaMeta;

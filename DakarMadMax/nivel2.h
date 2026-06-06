@@ -42,10 +42,12 @@ private slots:
     void gameLoop();
 
 private:
+    // ── Escena ────────────────────────────────────────────────────────────
     QGraphicsScene *scene;
     QGraphicsView  *view;
     QTimer         *timer;
 
+    // ── Vehículo animado ──────────────────────────────────────────────────
     QGraphicsPixmapItem *vehiculo;
     QVector<QPixmap>     motoFrames;
     int  frameSprite;
@@ -55,15 +57,17 @@ private:
     float velY;
     TipoVehiculo tipoVehiculo;
 
+    // ── Fondo y suelo desplazables ────────────────────────────────────────
     QGraphicsPixmapItem *fondo1;
     QGraphicsPixmapItem *fondo2;
     QGraphicsPixmapItem *suelo1;
     QGraphicsPixmapItem *suelo2;
     float velocidadMundo;
 
+    // ── Agujeros ──────────────────────────────────────────────────────────
     struct Agujero {
-        QGraphicsPixmapItem *imgItem;
-        QGraphicsRectItem   *tapaFondo;
+        QGraphicsPixmapItem *imgItem;    // imagen hueco.png (puede ser null)
+        QGraphicsRectItem   *tapaFondo;  // rectángulo negro de respaldo
         float xEscena;
         float ancho;
         bool  letraMostrada;
@@ -74,26 +78,32 @@ private:
     int intervaloAgujero;
     int agujerosSuperados;
 
+    // ── Mecánica de letra ─────────────────────────────────────────────────
     char   letraRequerida;
     QLabel *labelLetra;
     QLabel *labelPista;
-    QLabel *labelTiempoBar;
+    QLabel *labelTiempoBar;   // barra visual de tiempo restante
     bool   esperandoTecla;
     int    tiempoLimiteLetra;
     int    contadorLetra;
 
+    // ── Salto ─────────────────────────────────────────────────────────────
     bool  enSalto;
     float agujeroObjetivo;
     float anchoAgujeroActual;
 
+    // ── Meta ──────────────────────────────────────────────────────────────
     QGraphicsPixmapItem *meta;
 
+    // ── HUD ───────────────────────────────────────────────────────────────
     QLabel *labelDistancia;
     QLabel *labelMensaje;
 
+    // ── Estado ────────────────────────────────────────────────────────────
     EstadoNivel2 estado;
     int frameActual;
 
+    // ── Helpers ───────────────────────────────────────────────────────────
     void iniciarSalto();
     void mostrarLetra();
     void ocultarLetra();
@@ -103,6 +113,14 @@ private:
     void actualizarFondo();
     void finalizarNivel(bool exito);
 
+    // ── Helpers de gameLoop() ─────────────────────────────────────────────
+    void animarSprite();           // avanza el frame del spritesheet de la moto
+    void avanzarMeta();            // mueve la meta y comprueba si llegó
+    void gestionarAgujeros();      // genera nuevos agujeros periódicamente
+    void actualizarFisicaVehiculo(); // salto, caída y aterrizaje
+    void actualizarTemporizadorLetra(); // barra de tiempo y timeout de tecla
+
+    // ── Audio ─────────────────────────────────────────────────────────────
     QMediaPlayer  *musicaNivel2;
     QAudioOutput  *audioNivel2;
     QMediaPlayer  *sfxSalto;
