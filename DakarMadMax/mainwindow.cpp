@@ -36,7 +36,8 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 // ── Nivel 1 ───────────────────────────────────────────────────────────────────
-void MainWindow::iniciarJuego(TipoVehiculo tipo) {
+void MainWindow::iniciarJuego(TipoVehiculo tipo)
+{
     tipoElegido = tipo;
 
     scene = new QGraphicsScene(0, 0, 800, 600, this);
@@ -71,7 +72,6 @@ void MainWindow::iniciarJuego(TipoVehiculo tipo) {
     juegoTerminado = false;
     lineaMeta      = nullptr;
 
-    // ── Música nivel 1 ────────────────────────────────────────────────────
     musicaNivel1 = new QMediaPlayer(this);
     audioNivel1  = new QAudioOutput(this);
     musicaNivel1->setAudioOutput(audioNivel1);
@@ -90,7 +90,8 @@ void MainWindow::iniciarJuego(TipoVehiculo tipo) {
     jugador->setFocus();
 }
 
-void MainWindow::gameLoop() {
+void MainWindow::gameLoop()
+{
     if (juegoTerminado) return;
 
     escenario->desplazar();
@@ -104,7 +105,8 @@ void MainWindow::gameLoop() {
                              .arg(minutos)
                              .arg(segundos, 2, 10, QChar('0')));
 
-    if (tiempoRestante == 0 && lineaMeta == nullptr) {
+    if (tiempoRestante == 0 && lineaMeta == nullptr)
+    {
         lineaMeta = new QGraphicsRectItem(0, 50, 600, 8);
         lineaMeta->setBrush(QBrush(Qt::white));
         lineaMeta->setPen(Qt::NoPen);
@@ -112,7 +114,8 @@ void MainWindow::gameLoop() {
         scene->addItem(lineaMeta);
     }
 
-    if (lineaMeta != nullptr) {
+    if (lineaMeta != nullptr)
+    {
         lineaMeta->setY(lineaMeta->y() + 10.0f);
 
         QRectF rMeta    = lineaMeta->mapToScene(lineaMeta->boundingRect()).boundingRect();
@@ -125,27 +128,29 @@ void MainWindow::gameLoop() {
         else if (rRival.intersects(rMeta))
             ganador = "rival";
 
-        if (!ganador.isEmpty()) {
+        if (!ganador.isEmpty())
+        {
             juegoTerminado = true;
             timer->stop();
 
-            if (ganador == "jugador") {
-                // Mostrar mensaje y pasar al nivel 2
+            if (ganador == "jugador")
+            {
                 QMessageBox::information(this, "Nivel 1 completado",
                     "¡GANASTE la carrera!\n\nAhora viene el Nivel 2: ¡vista lateral!");
                 iniciarNivel2();
-            } else {
+            }
+            else
+            {
                 QMessageBox::information(this, "Fin de la carrera",
                     "El rival ganó. ¡Vuelve a intentarlo!");
-                // Volver a la selección
                 stack->setCurrentIndex(0);
             }
         }
     }
 
-    // ── Terrenos ──────────────────────────────────────────────────────────
     contadorFrames++;
-    if (contadorFrames >= 200) {
+    if (contadorFrames >= 200) //carretera
+    {
         contadorFrames = 0;
         int x     = QRandomGenerator::global()->bounded(20, 400);
         int ancho = QRandomGenerator::global()->bounded(100, 140);
@@ -156,7 +161,8 @@ void MainWindow::gameLoop() {
     }
 
     contadorFango++;
-    if (contadorFango >= 200) {
+    if (contadorFango >= 200)
+    {
         contadorFango = 0;
         int x     = QRandomGenerator::global()->bounded(20, 400);
         int ancho = QRandomGenerator::global()->bounded(100, 200);
@@ -167,7 +173,8 @@ void MainWindow::gameLoop() {
     }
 
     contadorLlantas++;
-    if (contadorLlantas >= 150) {
+    if (contadorLlantas >= 200)
+    {
         contadorLlantas = 0;
         float x   = (float)QRandomGenerator::global()->bounded(50, 500);
         float vel = 2.0f + QRandomGenerator::global()->bounded(0, 20) * 0.1f;
