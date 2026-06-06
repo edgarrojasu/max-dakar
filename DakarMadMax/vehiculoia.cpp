@@ -28,9 +28,13 @@ bool VehiculoIA::manejarBloqueoLlanta()
 InfoTerrenoIA VehiculoIA::escanearTerrenos(const std::vector<Terreno*> &terrenos) const
 {
     InfoTerrenoIA info;
-    QRectF miRect = mapToScene(boundingRect()).boundingRect();
-    QRectF vision(miRect.left() - 30, miRect.top() - 200.0f,
-                  miRect.width() + 60, 200.0f);
+    QRectF miRect  = mapToScene(boundingRect()).boundingRect();
+    float  centroX = miRect.center().x();
+
+    QRectF vision(miRect.left() - 300, miRect.top() - 200.0f,
+                  miRect.width() + 600, 200.0f);
+
+    float distMejorCarretera = 999999.0f;
 
     for (Terreno *t : terrenos)
     {
@@ -53,10 +57,15 @@ InfoTerrenoIA VehiculoIA::escanearTerrenos(const std::vector<Terreno*> &terrenos
             info.peligroAdelante = true;
             info.xPeligro        = rT.center().x();
         }
-        if (visible && esCarreteraT && !info.carreteraAdelante)
+        if (visible && esCarreteraT)
         {
-            info.carreteraAdelante = true;
-            info.xCarretera        = rT.center().x();
+            float dist = std::abs(rT.center().x() - centroX);
+            if (dist < distMejorCarretera)
+            {
+                distMejorCarretera     = dist;
+                info.carreteraAdelante = true;
+                info.xCarretera        = rT.center().x();
+            }
         }
     }
     return info;
@@ -105,7 +114,7 @@ float VehiculoIA::calcularVy(const InfoTerrenoIA &info, float &vx)
         }
         else
         {
-            vy = +3.0f;
+            vy = +1.0f;
             scaleDerrapeTiempo(0.85f);
             if (getDerrapeTiempo() < 0.05f)
             {
